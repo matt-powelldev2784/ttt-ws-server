@@ -1,7 +1,9 @@
 import { WebSocketServer } from 'ws'
 
+const port = process.env.PORT || 8081
+
 const server = new WebSocketServer({
-  port: 8081,
+  port,
 })
 
 server.on('connection', (socket) => {
@@ -17,4 +19,4 @@ server.on('connection', (socket) => {
   })
 })
 
-console.log('WebSocket server is running on ws://localhost:8081')
+console.log(`WebSocket server is running on ws://localhost:${port}`)
