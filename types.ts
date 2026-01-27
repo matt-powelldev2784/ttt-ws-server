@@ -4,6 +4,7 @@ export type Player = {
   id: string
   socket: WebSocket
   gameId: string | null
+  isAlive: boolean
 }
 
 export type Cell = 'X' | 'O' | null

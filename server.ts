@@ -3,15 +3,45 @@ import { randomUUID } from 'node:crypto'
 import { Player, Game, Board } from './types.js'
 import { startGamePolling } from './gamePolling.js'
 
+// server setup
 const port = Number(process.env.PORT) || 8081
-
 const server = new WebSocketServer({
   port,
 })
+console.info(`WebSocket server is running on ${port}`)
 
+// state
 const connections = new Map<string, Player>()
 const waitingPlayers = new Map<string, Player>()
 const games = new Map<string, Game>()
+
+// Start game polling for development and debugging purposes only
+startGamePolling({ connections, waitingPlayers, games })
+
+// websocket connection handler
+server.on('connection', (socket) => {
+  /// Add player to connections map
+  const playerId = `player-${randomUUID()}`
+  const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
+  connections.set(playerId, player)
+
+  // Handle incoming messages from clients
+  socket.on('message', (message) => {
+    const request = JSON.parse(message.toString())
+
+    if (request.type === 'START_GAME') {
+      addPlayerToWaitingList(player)
+    } else {
+      throw new Error(`Unknown request type: ${request}`)
+    }
+  })
+
+  // Handle socket close event
+  socket.on('close', () => {
+    console.log(`Client disconnected: ${playerId}`)
+    removePlayer(playerId)
+  })
+})
 
 const startGame = (playerX: Player, playerO: Player) => {
   const board: Board = [
@@ -44,31 +74,13 @@ const addPlayerToWaitingList = (player: Player) => {
     waitingPlayers.delete(player2.id)
   }
 }
-// Start polling connections every 5 seconds
-// For development/ debugging purposes
-startGamePolling({ connections, waitingPlayers, games })
 
-server.on('connection', (socket) => {
-  /// Assign a unique ID to the player and store the connection
-  const playerId = `player-${randomUUID()}`
-  const player: Player = { id: playerId, socket, gameId: null }
-  connections.set(playerId, player)
-
-  socket.on('message', (message) => {
-    const text = message.toString()
-
-    if (text === 'START_GAME') {
-      addPlayerToWaitingList(player)
-    } else {
-      throw new Error(`Unknown message: ${text}`)
+const removePlayer = (playerId: string) => {
+  connections.delete(playerId)
+  waitingPlayers.delete(playerId)
+  games.forEach((game, gameId) => {
+    if (game.playerX.id === playerId || game.playerO.id === playerId) {
+      games.delete(gameId)
     }
   })
-
-  socket.on('close', () => {
-    console.log(`Client disconnected: ${1}`)
-    connections.delete(playerId)
-    waitingPlayers.delete(playerId)
-  })
-})
-
-console.log(`WebSocket server is running on ${port}`)
+}

@@ -4,11 +4,21 @@ type ConnectionsMap = Map<string, Player>
 type WaitingPlayersMap = Map<string, Player>
 type GamesMap = Map<string, Game>
 
+const listTimestamp = (): void => {
+  const timestamp = new Date().toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'medium',
+  })
+
+  console.log('******************************************')
+  console.log('******************************************')
+  console.log('******************************************')
+  console.log('------------- Timestamp ---------------')
+  console.log('Timestamp:', timestamp)
+}
+
 const listConnections = (connections: ConnectionsMap): void => {
   const connectionsArray = [...connections.values()]
-  console.log('***********')
-  console.log('***********')
-  console.log('***********')
   console.log('------------- Connections ---------------')
   console.log('connectionsArray.length', connectionsArray.length)
   connectionsArray.forEach((player, i) => {
@@ -18,9 +28,6 @@ const listConnections = (connections: ConnectionsMap): void => {
 
 const listWaitingPlayers = (waitingPlayers: WaitingPlayersMap): void => {
   const waitingPlayersArray = [...waitingPlayers.values()]
-  console.log('***********')
-  console.log('***********')
-  console.log('***********')
   console.log('------------- Waiting Players ---------------')
   console.log('waitingPlayersArray.length', waitingPlayersArray.length)
   waitingPlayersArray.forEach((player, i) => {
@@ -30,13 +37,21 @@ const listWaitingPlayers = (waitingPlayers: WaitingPlayersMap): void => {
 
 const listGames = (games: GamesMap) => {
   const gamesArray = [...games.values()]
-  console.log('***********')
-  console.log('***********')
-  console.log('***********')
   console.log('------------- Games ---------------')
   console.log('gamesArray.length', gamesArray.length)
   gamesArray.forEach((game, i) => {
     console.log(`Game:${i} = ${game.playerX.id} vs ${game.playerO.id}`)
+  })
+}
+
+const listDeadConnections = (connections: ConnectionsMap): void => {
+  const connectionsArray = [...connections.values()].filter(
+    (player) => !player.isAlive,
+  )
+  console.log('------------- Dead Connections ---------------')
+  console.log('connectionsArray.length', connectionsArray.length)
+  connectionsArray.forEach((player, i) => {
+    console.log(`Connection:${i} = ${player.id} gameId=${player.isAlive}`)
   })
 }
 
@@ -51,7 +66,9 @@ export const startGamePolling = ({
   waitingPlayers,
   games,
 }: StartGamePollingInput) => {
+  setInterval(listTimestamp, 5000)
   setInterval(() => listConnections(connections), 5000)
   setInterval(() => listWaitingPlayers(waitingPlayers), 5000)
   setInterval(() => listGames(games), 5000)
+  setInterval(() => listDeadConnections(connections), 5000)
 }
