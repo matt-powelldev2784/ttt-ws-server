@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "dev": "nodemon --watch . --ext ts --ignore dist --ignore node_modules --exec \"tsx server.ts\"",
+    "dev": "nodemon --watch . --exec \"tsx server.ts\"",
     "postinstall": "npm run build",
     "start": "node dist/server.js"
   },
