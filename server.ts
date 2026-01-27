@@ -1,5 +1,7 @@
-import { WebSocketServer, WebSocket } from 'ws'
+import { WebSocketServer } from 'ws'
 import { randomUUID } from 'node:crypto'
+import { Player, Game, Board } from './types.js'
+import { startGamePolling } from './gamePolling.js'
 
 const port = Number(process.env.PORT) || 8081
 
@@ -7,46 +9,65 @@ const server = new WebSocketServer({
   port,
 })
 
-type Cell = 'X' | 'O' | null
-type Line = [Cell, Cell, Cell]
-type Board = [Line, Line, Line]
-type Game = { playerX: Player; playerO: Player; board: Board }
-
-type Player = {
-  id: string
-  socket: WebSocket
-}
-
-const clients = new Map<string, Player>()
+const connections = new Map<string, Player>()
+const waitingPlayers = new Map<string, Player>()
 const games = new Map<string, Game>()
 
-type PlayerMap = Map<string, Player>
+const startGame = (playerX: Player, playerO: Player) => {
+  const board: Board = [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ]
 
-const listConnections = () => {
-  const players = [...clients.values()]
-  console.log('player.length', players.length)
-  players.map((player, i) => {
-    console.log(`Connection:${i} = ${player.id}`)
-  })
+  const gameId = `game-${randomUUID()}`
+  const game: Game = { id: gameId, playerX, playerO, board }
+
+  // store the game
+  games.set(gameId, game)
+
+  // update connections with gameId
+  connections.set(playerX.id, { ...playerX, gameId })
+  connections.set(playerO.id, { ...playerO, gameId })
 }
 
-const listIntervalMs = Number(process.env.LIST_INTERVAL_MS) || 5000
-setInterval(listConnections, listIntervalMs)
+const addPlayerToWaitingList = (player: Player) => {
+  waitingPlayers.set(player.id, player)
+
+  if (waitingPlayers.size >= 2) {
+    const players = Array.from(waitingPlayers.values()).slice(0, 2)
+    const [player1, player2] = players
+    startGame(player1, player2)
+
+    // Remove players from waiting list
+    waitingPlayers.delete(player1.id)
+    waitingPlayers.delete(player2.id)
+  }
+}
+// Start polling connections every 5 seconds
+// For development/ debugging purposes
+startGamePolling({ connections, waitingPlayers, games })
 
 server.on('connection', (socket) => {
-  console.log(`Client connected: ${1}`)
-
   /// Assign a unique ID to the player and store the connection
-  const playerId = randomUUID()
-  const player: Player = { id: playerId, socket }
-  clients.set(playerId, player)
+  const playerId = `player-${randomUUID()}`
+  const player: Player = { id: playerId, socket, gameId: null }
+  connections.set(playerId, player)
 
   socket.on('message', (message) => {
-    console.log(`Received from ${1}`)
+    const text = message.toString()
+
+    if (text === 'START_GAME') {
+      addPlayerToWaitingList(player)
+    } else {
+      throw new Error(`Unknown message: ${text}`)
+    }
   })
 
   socket.on('close', () => {
     console.log(`Client disconnected: ${1}`)
+    connections.delete(playerId)
+    waitingPlayers.delete(playerId)
   })
 })
 
