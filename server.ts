@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
 import { Player, Game, Board } from './types.js'
 import { startGamePolling } from './gamePolling.js'
@@ -25,6 +25,10 @@ server.on('connection', (socket) => {
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
   connections.set(playerId, player)
 
+  socket.on('pong', () => {
+    player.isAlive = true
+  })
+
   // Handle incoming messages from clients
   socket.on('message', (message) => {
     const request = JSON.parse(message.toString())
@@ -42,6 +46,20 @@ server.on('connection', (socket) => {
     removePlayer(playerId)
   })
 })
+
+const heartbeatIntervalMs = 30000
+const heartbeatInterval = setInterval(() => {
+  connections.forEach((player, playerId) => {
+    if (!player.isAlive) {
+      player.socket.terminate()
+      removePlayer(playerId)
+      return
+    }
+
+    player.isAlive = false
+    player.socket.ping()
+  })
+}, heartbeatIntervalMs)
 
 const startGame = (playerX: Player, playerO: Player) => {
   const board: Board = [
@@ -75,12 +93,38 @@ const addPlayerToWaitingList = (player: Player) => {
   }
 }
 
+type SendToClientInput = {
+  socket: WebSocket
+  payload: Record<string, unknown>
+}
+
+const sendToClient = ({ socket, payload }: SendToClientInput) => {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(payload))
+  }
+}
+
 const removePlayer = (playerId: string) => {
-  connections.delete(playerId)
-  waitingPlayers.delete(playerId)
   games.forEach((game, gameId) => {
     if (game.playerX.id === playerId || game.playerO.id === playerId) {
+      sendToClient({
+        socket: game.playerX.socket,
+        payload: {
+          type: 'GAME_ENDED',
+          message: 'Player disconnected',
+        },
+      })
+      sendToClient({
+        socket: game.playerO.socket,
+        payload: {
+          type: 'GAME_ENDED',
+          message: 'Player disconnected',
+        },
+      })
       games.delete(gameId)
     }
   })
+
+  waitingPlayers.delete(playerId)
+  connections.delete(playerId)
 }
