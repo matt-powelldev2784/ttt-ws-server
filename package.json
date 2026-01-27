@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "dev": "npm run build && node dist/server.js",
+    "dev": "nodemon --watch . --ext ts --ignore dist --ignore node_modules --exec \"tsx server.ts\"",
     "postinstall": "npm run build",
     "start": "node dist/server.js"
   },
@@ -20,6 +20,8 @@
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/ws": "^8.5.10",
+    "nodemon": "^3.1.0",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   }
 }
