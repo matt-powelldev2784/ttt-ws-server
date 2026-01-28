@@ -22,15 +22,18 @@ if (process.env.NODE_ENV !== 'production') {
 
 // websocket connection handler
 server.on('connection', (socket: WebSocket) => {
-  /// Add player to connections map as reference
+  /// Add player to connections map
+  // NOTE - THE PLAYER IS PASSED AS A REFERENCE TO THE SOCKET EVENT HANDLERS
   const playerId = `player-${randomUUID()}`
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
   connections.set(playerId, player)
 
+  // Handle pong responses to check connection is alive
   socket.on('pong', () => {
     player.isAlive = true
   })
 
+  // send initial CONNECTED message to player
   const payload: MessagePayload = {
     type: 'GAME_STATE',
     status: 'CONNECTED',
@@ -44,7 +47,6 @@ server.on('connection', (socket: WebSocket) => {
     currentTurn: 'X',
     winner: null,
   }
-
   sendToClient({
     socket,
     payload,
@@ -55,7 +57,7 @@ server.on('connection', (socket: WebSocket) => {
     const request = JSON.parse(message.toString())
 
     if (request.type === 'START_GAME') {
-      addPlayerToWaitingList(player)
+      addPlayerToStartGameQueue(player)
     } else {
       console.log(`Unknown request type: ${request}`)
     }
@@ -88,7 +90,7 @@ setInterval(() => {
   })
 }, heartbeatIntervalMs)
 
-const addPlayerToWaitingList = (player: Player) => {
+const addPlayerToStartGameQueue = (player: Player) => {
   waitingPlayers.set(player.id, player)
 
   // send WAITING_FOR_OPPONENT message to player
@@ -111,17 +113,14 @@ const addPlayerToWaitingList = (player: Player) => {
 
   // If there are at least two players waiting, start a new game
   if (waitingPlayers.size >= 2) {
-    const players = Array.from(waitingPlayers.values()).slice(0, 2)
-    const [player1, player2] = players
-    startGame(player1, player2)
-
-    // Remove players from waiting list
-    waitingPlayers.delete(player1.id)
-    waitingPlayers.delete(player2.id)
+    startGame()
   }
 }
 
-const startGame = (playerX: Player, playerO: Player) => {
+const startGame = () => {
+  const players = Array.from(waitingPlayers.values()).slice(0, 2)
+  const [playerX, playerO] = players
+
   const board: Board = [
     [null, null, null],
     [null, null, null],
@@ -168,6 +167,10 @@ const startGame = (playerX: Player, playerO: Player) => {
     socket: playerO.socket,
     payload: playerOPayload,
   })
+
+  // Remove players from waiting list
+  waitingPlayers.delete(playerX.id)
+  waitingPlayers.delete(playerO.id)
 }
 
 type SendToClientInput = {
