@@ -24,6 +24,7 @@ server.on('connection', (socket) => {
   const playerId = `player-${randomUUID()}`
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
   connections.set(playerId, player)
+  
 
   socket.on('pong', () => {
     player.isAlive = true
@@ -76,6 +77,28 @@ const startGame = (playerX: Player, playerO: Player) => {
   // update connections with gameId
   playerX.gameId = gameId
   playerO.gameId = gameId
+
+  sendToClient({
+    socket: playerX.socket,
+    payload: {
+      type: 'GAME_STARTED',
+      gameId,
+      yourSymbol: 'X',
+      board,
+      opponentId: playerO.id,
+    },
+  })
+
+  sendToClient({
+    socket: playerO.socket,
+    payload: {
+      type: 'GAME_STARTED',
+      gameId,
+      yourSymbol: 'O',
+      board,
+      opponentId: playerX.id,
+    },
+  })
 }
 
 const addPlayerToWaitingList = (player: Player) => {
