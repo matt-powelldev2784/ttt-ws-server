@@ -70,12 +70,17 @@ server.on('connection', (socket: WebSocket) => {
 })
 
 // send to client function
+type SendToClientInput = {
+  socket: WebSocket
+  payload: MessagePayload
+}
 const sendToClient = ({ socket, payload }: SendToClientInput) => {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload))
   }
 }
 
+// Heartbeat mechanism to detect dead connections
 const heartbeatIntervalMs = 30000
 setInterval(() => {
   connections.forEach((player, playerId) => {
@@ -90,6 +95,7 @@ setInterval(() => {
   })
 }, heartbeatIntervalMs)
 
+// add player to start game queue
 const addPlayerToStartGameQueue = (player: Player) => {
   waitingPlayers.set(player.id, player)
 
@@ -117,6 +123,7 @@ const addPlayerToStartGameQueue = (player: Player) => {
   }
 }
 
+// start a new game
 const startGame = () => {
   const players = Array.from(waitingPlayers.values()).slice(0, 2)
   const [playerX, playerO] = players
@@ -173,11 +180,7 @@ const startGame = () => {
   waitingPlayers.delete(playerO.id)
 }
 
-type SendToClientInput = {
-  socket: WebSocket
-  payload: MessagePayload
-}
-
+// remove player from all state maps
 const removePlayer = (playerId: string) => {
   games.forEach((game, gameId) => {
     if (game.playerX.id === playerId || game.playerO.id === playerId) {
