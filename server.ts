@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
-import { Player, Game, Board } from './types.js'
+import { Player, Game, Board, GameMessagePayload } from './types.js'
 import { startGamePolling } from './gamePolling.js'
 
 // server setup
@@ -24,7 +24,6 @@ server.on('connection', (socket) => {
   const playerId = `player-${randomUUID()}`
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
   connections.set(playerId, player)
-  
 
   socket.on('pong', () => {
     player.isAlive = true
@@ -78,26 +77,33 @@ const startGame = (playerX: Player, playerO: Player) => {
   playerX.gameId = gameId
   playerO.gameId = gameId
 
+  // send GAME_STARTED message to both players
+  const playerXPayload: GameMessagePayload = {
+    type: 'GAME_MESSAGE',
+    status: 'IN_PROGRESS',
+    gameId,
+    yourSymbol: 'X',
+    board,
+    opponentId: playerO.id,
+  }
+
+  const playerOPayload: GameMessagePayload = {
+    type: 'GAME_MESSAGE',
+    status: 'IN_PROGRESS',
+    gameId,
+    yourSymbol: 'O',
+    board,
+    opponentId: playerX.id,
+  }
+
   sendToClient({
     socket: playerX.socket,
-    payload: {
-      type: 'GAME_STARTED',
-      gameId,
-      yourSymbol: 'X',
-      board,
-      opponentId: playerO.id,
-    },
+    payload: playerXPayload,
   })
 
   sendToClient({
     socket: playerO.socket,
-    payload: {
-      type: 'GAME_STARTED',
-      gameId,
-      yourSymbol: 'O',
-      board,
-      opponentId: playerX.id,
-    },
+    payload: playerOPayload,
   })
 }
 
@@ -117,7 +123,7 @@ const addPlayerToWaitingList = (player: Player) => {
 
 type SendToClientInput = {
   socket: WebSocket
-  payload: Record<string, unknown>
+  payload: GameMessagePayload
 }
 
 const sendToClient = ({ socket, payload }: SendToClientInput) => {
@@ -127,6 +133,12 @@ const sendToClient = ({ socket, payload }: SendToClientInput) => {
 }
 
 const removePlayer = (playerId: string) => {
+  games.forEach((game, gameId) => {
+    if (game.playerX.id === playerId || game.playerO.id === playerId) {
+      games.delete(gameId)
+    }
+  })
+
   waitingPlayers.delete(playerId)
   connections.delete(playerId)
 }

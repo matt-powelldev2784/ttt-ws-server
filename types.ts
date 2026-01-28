@@ -16,3 +16,12 @@ export type Game = {
   playerO: Player
   board: Board
 }
+
+export type GameMessagePayload = {
+  type: 'GAME_MESSAGE'
+  status: 'IN_PROGRESS'
+  gameId: string
+  yourSymbol: 'X' | 'O'
+  board: Board
+  opponentId: string
+}
