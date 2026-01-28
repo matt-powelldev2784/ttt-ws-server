@@ -38,7 +38,7 @@ server.on('connection', (socket: WebSocket) => {
     type: 'GAME_STATE',
     status: 'CONNECTED',
     gameId: null,
-    playerSymbol: 'X',
+    playerSymbol: null,
     board: [
       [null, null, null],
       [null, null, null],

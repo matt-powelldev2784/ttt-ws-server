@@ -28,7 +28,7 @@ export type MessagePayload = {
   type: 'GAME_STATE'
   status: Status
   gameId: string | null
-  playerSymbol: 'X' | 'O'
+  playerSymbol: 'X' | 'O' | null
   board: Board
   currentTurn: 'X' | 'O'
   winner: 'X' | 'O' | 'DRAW' | null
