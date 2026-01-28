@@ -110,7 +110,7 @@ const addPlayerToStartGameQueue = (player: Player) => {
       type: 'GAME_STATE',
       status: 'WAITING_FOR_OPPONENT',
       gameId: null,
-      playerSymbol: 'X',
+      playerSymbol: null,
       board: [
         [null, null, null],
         [null, null, null],
@@ -132,7 +132,7 @@ const startGame = () => {
   if (waitingPlayers.size < 2) {
     return
   }
-  
+
   const players = Array.from(waitingPlayers.values()).slice(0, 2)
   const [playerX, playerO] = players
 
