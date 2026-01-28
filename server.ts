@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
-import { Player, Game, Board, MessagePayload } from './types.js'
+import { Player, Game, Board, GameState } from './types.js'
 import { startGamePolling } from './gamePolling.js'
 
 // server setup
@@ -34,7 +34,7 @@ server.on('connection', (socket: WebSocket) => {
   })
 
   // send initial CONNECTED message to player
-  const payload: MessagePayload = {
+  const payload: GameState = {
     type: 'GAME_STATE',
     status: 'CONNECTED',
     gameId: null,
@@ -54,12 +54,16 @@ server.on('connection', (socket: WebSocket) => {
 
   // Handle incoming messages from clients
   socket.on('message', (message: WebSocket.RawData) => {
-    const request = JSON.parse(message.toString())
-
-    if (request.type === 'START_GAME') {
-      addPlayerToStartGameQueue(player)
-    } else {
-      console.log(`Unknown request type: ${request}`)
+    try {
+      const request = JSON.parse(message.toString())
+      if (request.type === 'START_GAME') {
+        addPlayerToStartGameQueue(player)
+      } else {
+        console.log(`Unknown request type: ${request}`)
+      }
+    } catch (error) {
+      console.error('Error parsing message:', error)
+      return
     }
   })
 
@@ -72,7 +76,7 @@ server.on('connection', (socket: WebSocket) => {
 // send to client function
 type SendToClientInput = {
   socket: WebSocket
-  payload: MessagePayload
+  payload: GameState
 }
 const sendToClient = ({ socket, payload }: SendToClientInput) => {
   if (socket.readyState === WebSocket.OPEN) {
@@ -145,7 +149,7 @@ const startGame = () => {
   playerO.gameId = gameId
 
   // send IN_PROGRESS message to both players
-  const playerXPayload: MessagePayload = {
+  const playerXPayload: GameState = {
     type: 'GAME_STATE',
     status: 'IN_PROGRESS',
     gameId,
@@ -155,7 +159,7 @@ const startGame = () => {
     winner: null,
   }
 
-  const playerOPayload: MessagePayload = {
+  const playerOPayload: GameState = {
     type: 'GAME_STATE',
     status: 'IN_PROGRESS',
     gameId,

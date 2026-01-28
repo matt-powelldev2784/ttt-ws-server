@@ -24,7 +24,7 @@ type Status =
   | 'IN_PROGRESS'
   | 'COMPLETED'
 
-export type MessagePayload = {
+export type GameState = {
   type: 'GAME_STATE'
   status: Status
   gameId: string | null
