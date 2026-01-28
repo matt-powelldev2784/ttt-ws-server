@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
-import { Player, Game, Board, GameMessagePayload } from './types.js'
+import { Player, Game, Board, MessagePayload } from './types.js'
 import { startGamePolling } from './gamePolling.js'
 
 // server setup
@@ -19,7 +19,7 @@ const games = new Map<string, Game>()
 startGamePolling({ connections, waitingPlayers, games })
 
 // websocket connection handler
-server.on('connection', (socket) => {
+server.on('connection', (socket: WebSocket) => {
   /// Add player to connections map as reference
   const playerId = `player-${randomUUID()}`
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
@@ -29,8 +29,27 @@ server.on('connection', (socket) => {
     player.isAlive = true
   })
 
+  const payload: MessagePayload = {
+    type: 'GAME_STATE',
+    status: 'CONNECTED',
+    gameId: null,
+    playerSymbol: 'X',
+    board: [
+      [null, null, null],
+      [null, null, null],
+      [null, null, null],
+    ],
+    currentTurn: 'X',
+    winner: null,
+  }
+
+  sendToClient({
+    socket,
+    payload,
+  })
+
   // Handle incoming messages from clients
-  socket.on('message', (message) => {
+  socket.on('message', (message: WebSocket.RawData) => {
     const request = JSON.parse(message.toString())
 
     if (request.type === 'START_GAME') {
@@ -46,6 +65,13 @@ server.on('connection', (socket) => {
   })
 })
 
+// send to client function
+const sendToClient = ({ socket, payload }: SendToClientInput) => {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(payload))
+  }
+}
+
 const heartbeatIntervalMs = 30000
 setInterval(() => {
   connections.forEach((player, playerId) => {
@@ -59,6 +85,39 @@ setInterval(() => {
     player.socket.ping()
   })
 }, heartbeatIntervalMs)
+
+const addPlayerToWaitingList = (player: Player) => {
+  waitingPlayers.set(player.id, player)
+
+  // send WAITING_FOR_OPPONENT message to player
+  sendToClient({
+    socket: player.socket,
+    payload: {
+      type: 'GAME_STATE',
+      status: 'WAITING_FOR_OPPONENT',
+      gameId: null,
+      playerSymbol: 'X',
+      board: [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null],
+      ],
+      currentTurn: 'X',
+      winner: null,
+    },
+  })
+
+  // If there are at least two players waiting, start a new game
+  if (waitingPlayers.size >= 2) {
+    const players = Array.from(waitingPlayers.values()).slice(0, 2)
+    const [player1, player2] = players
+    startGame(player1, player2)
+
+    // Remove players from waiting list
+    waitingPlayers.delete(player1.id)
+    waitingPlayers.delete(player2.id)
+  }
+}
 
 const startGame = (playerX: Player, playerO: Player) => {
   const board: Board = [
@@ -77,23 +136,25 @@ const startGame = (playerX: Player, playerO: Player) => {
   playerX.gameId = gameId
   playerO.gameId = gameId
 
-  // send GAME_STARTED message to both players
-  const playerXPayload: GameMessagePayload = {
-    type: 'GAME_MESSAGE',
+  // send IN_PROGRESS message to both players
+  const playerXPayload: MessagePayload = {
+    type: 'GAME_STATE',
     status: 'IN_PROGRESS',
     gameId,
-    yourSymbol: 'X',
+    playerSymbol: 'X',
     board,
-    opponentId: playerO.id,
+    currentTurn: 'X',
+    winner: null,
   }
 
-  const playerOPayload: GameMessagePayload = {
-    type: 'GAME_MESSAGE',
+  const playerOPayload: MessagePayload = {
+    type: 'GAME_STATE',
     status: 'IN_PROGRESS',
     gameId,
-    yourSymbol: 'O',
+    playerSymbol: 'O',
     board,
-    opponentId: playerX.id,
+    currentTurn: 'X',
+    winner: null,
   }
 
   sendToClient({
@@ -107,29 +168,9 @@ const startGame = (playerX: Player, playerO: Player) => {
   })
 }
 
-const addPlayerToWaitingList = (player: Player) => {
-  waitingPlayers.set(player.id, player)
-
-  if (waitingPlayers.size >= 2) {
-    const players = Array.from(waitingPlayers.values()).slice(0, 2)
-    const [player1, player2] = players
-    startGame(player1, player2)
-
-    // Remove players from waiting list
-    waitingPlayers.delete(player1.id)
-    waitingPlayers.delete(player2.id)
-  }
-}
-
 type SendToClientInput = {
   socket: WebSocket
-  payload: GameMessagePayload
-}
-
-const sendToClient = ({ socket, payload }: SendToClientInput) => {
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(payload))
-  }
+  payload: MessagePayload
 }
 
 const removePlayer = (playerId: string) => {

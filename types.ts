@@ -17,11 +17,19 @@ export type Game = {
   board: Board
 }
 
-export type GameMessagePayload = {
-  type: 'GAME_MESSAGE'
-  status: 'IN_PROGRESS'
-  gameId: string
-  yourSymbol: 'X' | 'O'
+type Status =
+  | 'NOT_CONNECTED'
+  | 'CONNECTED'
+  | 'WAITING_FOR_OPPONENT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+
+export type MessagePayload = {
+  type: 'GAME_STATE'
+  status: Status
+  gameId: string | null
+  playerSymbol: 'X' | 'O'
   board: Board
-  opponentId: string
+  currentTurn: 'X' | 'O'
+  winner: 'X' | 'O' | 'DRAW' | null
 }
