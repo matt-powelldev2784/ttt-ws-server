@@ -16,9 +16,9 @@ const waitingPlayers = new Map<string, Player>()
 const games = new Map<string, Game>()
 
 // Start game polling for development and debugging purposes only
-if (process.env.NODE_ENV !== 'production') {
-  startGamePolling({ connections, waitingPlayers, games })
-}
+// if (process.env.NODE_ENV !== 'production') {
+startGamePolling({ connections, waitingPlayers, games })
+// }
 
 // websocket connection handler
 server.on('connection', (socket: WebSocket) => {
