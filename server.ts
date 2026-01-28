@@ -129,6 +129,10 @@ const addPlayerToStartGameQueue = (player: Player) => {
 
 // start a new game
 const startGame = () => {
+  if (waitingPlayers.size < 2) {
+    return
+  }
+  
   const players = Array.from(waitingPlayers.values()).slice(0, 2)
   const [playerX, playerO] = players
 
