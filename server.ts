@@ -20,7 +20,7 @@ startGamePolling({ connections, waitingPlayers, games })
 
 // websocket connection handler
 server.on('connection', (socket) => {
-  /// Add player to connections map
+  /// Add player to connections map as reference
   const playerId = `player-${randomUUID()}`
   const player: Player = { id: playerId, socket, gameId: null, isAlive: true }
   connections.set(playerId, player)
@@ -36,19 +36,18 @@ server.on('connection', (socket) => {
     if (request.type === 'START_GAME') {
       addPlayerToWaitingList(player)
     } else {
-      throw new Error(`Unknown request type: ${request}`)
+      console.log(`Unknown request type: ${request}`)
     }
   })
 
   // Handle socket close event
   socket.on('close', () => {
-    console.log(`Client disconnected: ${playerId}`)
     removePlayer(playerId)
   })
 })
 
 const heartbeatIntervalMs = 30000
-const heartbeatInterval = setInterval(() => {
+setInterval(() => {
   connections.forEach((player, playerId) => {
     if (!player.isAlive) {
       player.socket.terminate()
@@ -75,8 +74,8 @@ const startGame = (playerX: Player, playerO: Player) => {
   games.set(gameId, game)
 
   // update connections with gameId
-  connections.set(playerX.id, { ...playerX, gameId })
-  connections.set(playerO.id, { ...playerO, gameId })
+  playerX.gameId = gameId
+  playerO.gameId = gameId
 }
 
 const addPlayerToWaitingList = (player: Player) => {
@@ -105,26 +104,6 @@ const sendToClient = ({ socket, payload }: SendToClientInput) => {
 }
 
 const removePlayer = (playerId: string) => {
-  games.forEach((game, gameId) => {
-    if (game.playerX.id === playerId || game.playerO.id === playerId) {
-      sendToClient({
-        socket: game.playerX.socket,
-        payload: {
-          type: 'GAME_ENDED',
-          message: 'Player disconnected',
-        },
-      })
-      sendToClient({
-        socket: game.playerO.socket,
-        payload: {
-          type: 'GAME_ENDED',
-          message: 'Player disconnected',
-        },
-      })
-      games.delete(gameId)
-    }
-  })
-
   waitingPlayers.delete(playerId)
   connections.delete(playerId)
 }

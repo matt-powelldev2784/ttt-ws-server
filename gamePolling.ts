@@ -24,6 +24,7 @@ const listConnections = (connections: ConnectionsMap): void => {
   connectionsArray.forEach((player, i) => {
     console.log(`Connection:${i} = ${player.id} gameId=${player.gameId}`)
   })
+  console.log('  ')
 }
 
 const listWaitingPlayers = (waitingPlayers: WaitingPlayersMap): void => {
@@ -33,6 +34,7 @@ const listWaitingPlayers = (waitingPlayers: WaitingPlayersMap): void => {
   waitingPlayersArray.forEach((player, i) => {
     console.log(`Waiting Player:${i} = ${player.id}`)
   })
+  console.log('  ')
 }
 
 const listGames = (games: GamesMap) => {
@@ -42,6 +44,7 @@ const listGames = (games: GamesMap) => {
   gamesArray.forEach((game, i) => {
     console.log(`Game:${i} = ${game.playerX.id} vs ${game.playerO.id}`)
   })
+  console.log('  ')
 }
 
 const listDeadConnections = (connections: ConnectionsMap): void => {
@@ -53,6 +56,7 @@ const listDeadConnections = (connections: ConnectionsMap): void => {
   connectionsArray.forEach((player, i) => {
     console.log(`Connection:${i} = ${player.id} gameId=${player.isAlive}`)
   })
+  console.log('  ')
 }
 
 type StartGamePollingInput = {
