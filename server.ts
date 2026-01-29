@@ -13,7 +13,7 @@ console.info(`WebSocket server is running on ${port}`)
 // state
 const connections = new Map<string, Player>()
 const waitingPlayers = new Map<string, Player>()
-const games = new Map<string, Game>()
+const games = new Map<string, GameState>()
 
 // Start game polling for development and debugging purposes only
 if (process.env.NODE_ENV !== 'production') {
@@ -39,11 +39,13 @@ server.on('connection', (socket: WebSocket) => {
     status: 'CONNECTED',
     gameId: null,
     playerSymbol: null,
+    playerId: player.id,
+    opponentId: null,
     board: [null, null, null, null, null, null, null, null, null],
     currentTurn: 'X',
     winner: null,
   }
-  sendToClient({
+  updateGameState({
     socket,
     payload,
   })
@@ -74,10 +76,14 @@ type SendToClientInput = {
   socket: WebSocket
   payload: GameState
 }
-const sendToClient = ({ socket, payload }: SendToClientInput) => {
+const updateGameState = ({ socket, payload }: SendToClientInput) => {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload))
   }
+
+  if (!payload.gameId) return
+
+  games.set(payload.gameId, payload)
 }
 
 // Heartbeat mechanism to detect dead connections
@@ -100,12 +106,14 @@ const addPlayerToStartGameQueue = (player: Player) => {
   waitingPlayers.set(player.id, player)
 
   // send WAITING_FOR_OPPONENT message to player
-  sendToClient({
+  updateGameState({
     socket: player.socket,
     payload: {
       type: 'GAME_STATE',
       status: 'WAITING_FOR_OPPONENT',
       gameId: null,
+      playerId: player.id,
+      opponentId: null,
       playerSymbol: null,
       board: [null, null, null, null, null, null, null, null, null],
       currentTurn: 'X',
@@ -130,22 +138,15 @@ const startGame = () => {
 
   const board: Board = [null, null, null, null, null, null, null, null, null]
 
-  const gameId = `game-${randomUUID()}`
-  const game: Game = { id: gameId, playerX, playerO, board }
-
-  // store the game
-  games.set(gameId, game)
-
-  // update connections with gameId
-  playerX.gameId = gameId
-  playerO.gameId = gameId
-
   // send IN_PROGRESS message to both players
+  const gameId = `game-${randomUUID()}`
   const playerXPayload: GameState = {
     type: 'GAME_STATE',
     status: 'IN_PROGRESS',
     gameId,
     playerSymbol: 'X',
+    playerId: playerX.id,
+    opponentId: playerO.id,
     board,
     currentTurn: 'X',
     winner: null,
@@ -156,17 +157,19 @@ const startGame = () => {
     status: 'IN_PROGRESS',
     gameId,
     playerSymbol: 'O',
+    playerId: playerO.id,
+    opponentId: playerX.id,
     board,
     currentTurn: 'X',
     winner: null,
   }
 
-  sendToClient({
+  updateGameState({
     socket: playerX.socket,
     payload: playerXPayload,
   })
 
-  sendToClient({
+  updateGameState({
     socket: playerO.socket,
     payload: playerOPayload,
   })
@@ -179,11 +182,17 @@ const startGame = () => {
 // remove player from all state maps
 const removePlayer = (playerId: string) => {
   games.forEach((game, gameId) => {
-    if (game.playerX.id === playerId || game.playerO.id === playerId) {
+    if (game.playerId === playerId || game.opponentId === playerId) {
       games.delete(gameId)
     }
   })
 
   waitingPlayers.delete(playerId)
   connections.delete(playerId)
+}
+
+const addMoveToBoard = (game: Game, index: number, symbol: 'X' | 'O') => {
+  if (game.board[index] === null) {
+    game.board[index] = symbol
+  }
 }

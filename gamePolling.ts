@@ -1,8 +1,8 @@
-import { Game, Player } from './types.js'
+import { GameState, Player } from './types.js'
 
 type ConnectionsMap = Map<string, Player>
 type WaitingPlayersMap = Map<string, Player>
-type GamesMap = Map<string, Game>
+type GamesMap = Map<string, GameState>
 
 const listTimestamp = (): void => {
   const timestamp = new Date().toLocaleString(undefined, {
@@ -42,7 +42,7 @@ const listGames = (games: GamesMap) => {
   console.log('------------- Games ---------------')
   console.log('gamesArray.length', gamesArray.length)
   gamesArray.forEach((game, i) => {
-    console.log(`Game:${i} = ${game.playerX.id} vs ${game.playerO.id}`)
+    console.log(`Game:${i} = ${game.playerId} vs ${game.opponentId}`)
   })
   console.log('  ')
 }
