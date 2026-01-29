@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
 import { Player, Game, Board, GameState } from './types.js'
 import { startGamePolling } from './gamePolling.js'
+import { error } from 'node:console'
 
 // server setup
 const port = Number(process.env.PORT) || 8081
@@ -33,17 +34,10 @@ server.on('connection', (socket: WebSocket) => {
     player.isAlive = true
   })
 
-  // send initial CONNECTED message to player
+  // send initial game state to client
   const payload: GameState = {
-    type: 'GAME_STATE',
-    status: 'CONNECTED',
-    gameId: null,
-    playerSymbol: null,
+    ...initialGameState,
     playerId: player.id,
-    opponentId: null,
-    board: [null, null, null, null, null, null, null, null, null],
-    currentTurn: 'X',
-    winner: null,
   }
   updateGameState({
     socket,
@@ -54,10 +48,23 @@ server.on('connection', (socket: WebSocket) => {
   socket.on('message', (message) => {
     try {
       const request = JSON.parse(message.toString())
-      if (request.type === 'START_GAME') {
-        addPlayerToStartGameQueue(player)
-      } else {
-        console.log(`Unknown request type: ${request}`)
+      // start game message
+      switch (request.type) {
+        case 'START_GAME':
+          addPlayerToStartGameQueue(player)
+          break
+
+        case 'MAKE_MOVE':
+          const { gameId, index, symbol } = request.payload
+          const result = addMoveToBoard({ gameId, index, symbol })
+          updateGameState({
+            socket,
+            payload: result,
+          })
+          break
+
+        default:
+          console.log(`Unknown request type: ${request}`)
       }
     } catch (error) {
       console.error('Error parsing message:', error)
@@ -70,6 +77,19 @@ server.on('connection', (socket: WebSocket) => {
     removePlayer(playerId)
   })
 })
+
+const initialGameState: GameState = {
+  type: 'GAME_STATE',
+  status: 'CONNECTED',
+  gameId: null,
+  playerSymbol: null,
+  playerId: null,
+  opponentId: null,
+  board: [null, null, null, null, null, null, null, null, null],
+  currentTurn: 'X',
+  winner: null,
+  error: null,
+}
 
 // send to client function
 type SendToClientInput = {
@@ -191,8 +211,25 @@ const removePlayer = (playerId: string) => {
   connections.delete(playerId)
 }
 
-const addMoveToBoard = (game: Game, index: number, symbol: 'X' | 'O') => {
+type AddMoveToBoardInput = {
+  gameId: string
+  index: number
+  symbol: 'X' | 'O'
+}
+
+const addMoveToBoard = ({ gameId, index, symbol }: AddMoveToBoardInput) => {
+  const game = games.get(gameId)
+  if (!game) {
+    const gameStatus = { ...initialGameState, error: 'Game not found' }
+    return gameStatus
+  }
+
   if (game.board[index] === null) {
     game.board[index] = symbol
+    const gameStatus = { ...game, error: null }
+    return gameStatus
   }
+
+  const gameStatus = { ...game, error: 'Cell already occupied' }
+  return gameStatus
 }

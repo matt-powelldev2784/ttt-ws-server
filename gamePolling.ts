@@ -47,6 +47,16 @@ const listGames = (games: GamesMap) => {
   console.log('  ')
 }
 
+const listGameBoards = (games: GamesMap) => {
+  const gamesArray = [...games.values()]
+  console.log('------------- Game Boards---------------')
+  console.log('gamesArray.length', gamesArray.length)
+  gamesArray.forEach((game, i) => {
+    console.log(`Game:${game.gameId} = ${game.board} `)
+  })
+  console.log('  ')
+}
+
 const listDeadConnections = (connections: ConnectionsMap): void => {
   const connectionsArray = [...connections.values()].filter(
     (player) => !player.isAlive,
@@ -55,6 +65,16 @@ const listDeadConnections = (connections: ConnectionsMap): void => {
   console.log('connectionsArray.length', connectionsArray.length)
   connectionsArray.forEach((player, i) => {
     console.log(`Connection:${i} = ${player.id} gameId=${player.isAlive}`)
+  })
+  console.log('  ')
+}
+
+const listGameState = (games: GamesMap): void => {
+  const gamesArray = [...games.values()]
+  console.log('------------- Game States ---------------')
+  console.log('gamesArray.length', gamesArray.length)
+  gamesArray.forEach((game, i) => {
+    console.log(`Game State:${i} = ${JSON.stringify(game)}`)
   })
   console.log('  ')
 }
@@ -75,4 +95,6 @@ export const startGamePolling = ({
   setInterval(() => listWaitingPlayers(waitingPlayers), 5000)
   setInterval(() => listGames(games), 5000)
   setInterval(() => listDeadConnections(connections), 5000)
+  setInterval(() => listGameBoards(games), 5000)
+  setInterval(() => listGameState(games), 5000)
 }
