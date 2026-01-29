@@ -8,8 +8,7 @@ export type Player = {
 }
 
 export type Cell = 'X' | 'O' | null
-export type Line = [Cell, Cell, Cell]
-export type Board = [Line, Line, Line]
+export type Board = [Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell]
 export type Game = {
   id: string
   playerX: Player

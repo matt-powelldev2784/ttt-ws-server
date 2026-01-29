@@ -39,11 +39,7 @@ server.on('connection', (socket: WebSocket) => {
     status: 'CONNECTED',
     gameId: null,
     playerSymbol: null,
-    board: [
-      [null, null, null],
-      [null, null, null],
-      [null, null, null],
-    ],
+    board: [null, null, null, null, null, null, null, null, null],
     currentTurn: 'X',
     winner: null,
   }
@@ -111,11 +107,7 @@ const addPlayerToStartGameQueue = (player: Player) => {
       status: 'WAITING_FOR_OPPONENT',
       gameId: null,
       playerSymbol: null,
-      board: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null],
-      ],
+      board: [null, null, null, null, null, null, null, null, null],
       currentTurn: 'X',
       winner: null,
     },
@@ -136,11 +128,7 @@ const startGame = () => {
   const players = Array.from(waitingPlayers.values()).slice(0, 2)
   const [playerX, playerO] = players
 
-  const board: Board = [
-    [null, null, null],
-    [null, null, null],
-    [null, null, null],
-  ]
+  const board: Board = [null, null, null, null, null, null, null, null, null]
 
   const gameId = `game-${randomUUID()}`
   const game: Game = { id: gameId, playerX, playerO, board }
