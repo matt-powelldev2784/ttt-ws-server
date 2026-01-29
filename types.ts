@@ -6,6 +6,7 @@ export type Player = {
   socket: WebSocket
   gameId: string | null
   isAlive: boolean
+  symbol: 'X' | 'O' | null
 }
 
 export type Cell = 'X' | 'O' | null
@@ -35,4 +36,12 @@ export type GameState = {
   currentTurn: 'X' | 'O'
   winner: 'X' | 'O' | 'DRAW' | null
   error?: string | null | undefined
+  playerX?: Player | undefined
+  playerO?: Player | undefined
+}
+
+export type GameMove = {
+  type: 'GAME_MOVE'
+  board: Board
+  currentTurn: 'X' | 'O'
 }
