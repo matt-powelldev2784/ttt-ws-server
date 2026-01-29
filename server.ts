@@ -63,18 +63,7 @@ server.on('connection', (socket: WebSocket) => {
         case 'MAKE_MOVE':
           const { gameId, index, symbol } = request.payload
           updateBoard({ gameId, index, symbol })
-          const game = games.get(gameId)
-          const gameBoard = game?.board
-          const currentTurn = game?.currentTurn
-          updateGameState({
-            playerXSocket: game?.playerX!.socket as WebSocket,
-            playerOSocket: game?.playerO!.socket as WebSocket,
-            payload: {
-              type: 'GAME_MOVE',
-              board: gameBoard!,
-              currentTurn: currentTurn!,
-            },
-          })
+          updateGameState({ gameId: gameId })
           break
 
         default:
@@ -121,15 +110,21 @@ const initialiseGameState = ({ socket, payload }: SendToClientInput) => {
 }
 
 type UpdateGameStateInput = {
-  playerXSocket: WebSocket
-  playerOSocket: WebSocket
-  payload: GameMove
+  gameId: string
 }
-const updateGameState = ({
-  playerXSocket,
-  playerOSocket,
-  payload,
-}: UpdateGameStateInput) => {
+const updateGameState = ({ gameId }: UpdateGameStateInput) => {
+  const game = games.get(gameId)
+  const gameBoard = game?.board
+  const currentTurn = game?.currentTurn
+  const playerXSocket = game?.playerX!.socket as WebSocket
+  const playerOSocket = game?.playerO!.socket as WebSocket
+  const payload = {
+    type: 'GAME_MOVE',
+    board: gameBoard,
+    currentTurn: currentTurn,
+    error: game?.error || null,
+  }
+
   if (playerXSocket.readyState === WebSocket.OPEN) {
     playerXSocket.send(JSON.stringify(payload))
   }
@@ -259,7 +254,7 @@ type UpdateBoardInput = {
 const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
   const game = games.get(gameId)
 
-  // Validate move
+  // check if game exists
   if (!game) {
     games.set(gameId, {
       ...initialGameState,
@@ -278,7 +273,7 @@ const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
   }
 
   // Check if the cell is already occupied
-  if (game.board[index] === symbol) {
+  if (game.board[index] !== null) {
     games.set(gameId, {
       ...game!,
       error: 'Cell already occupied by your symbol',
