@@ -86,10 +86,13 @@ const startGame = () => {
   waitingPlayers.delete(playerO.id)
 }
 
-// remove player from all state maps
+// remove player from active games, waiting players list and connections list
 export const removePlayer = (playerId: string) => {
   games.forEach((game, gameId) => {
-    if (game.playerX?.id === playerId || game.playerO?.id === playerId) {
+    const playerHasActiveGame =
+      game.playerX?.id === playerId || game.playerO?.id === playerId
+
+    if (playerHasActiveGame) {
       games.set(gameId, {
         ...game,
         error: 'CONNECTION_LOST',
