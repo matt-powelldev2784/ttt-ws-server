@@ -49,7 +49,7 @@ server.on('connection', (socket: WebSocket) => {
   // send initial game state to client
   setupGame({
     socket,
-    payload: { ...initialGameState, playerId: player.id },
+    payload: initialGameState,
   })
 
   // Handle incoming messages from clients

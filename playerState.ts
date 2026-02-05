@@ -16,8 +16,6 @@ export const addPlayerToStartGameQueue = (player: Player) => {
       type: 'GAME_STATE',
       status: 'WAITING_FOR_OPPONENT',
       gameId: null,
-      playerId: player.id,
-      opponentId: null,
       playerSymbol: null,
       board: [null, null, null, null, null, null, null, null, null],
       currentTurn: 'X',
@@ -52,8 +50,6 @@ const startGame = () => {
     status: 'IN_PROGRESS',
     gameId,
     playerSymbol: 'X',
-    playerId: playerX.id,
-    opponentId: playerO.id,
     board,
     currentTurn: 'X',
     winner: null,
@@ -67,8 +63,6 @@ const startGame = () => {
     status: 'IN_PROGRESS',
     gameId,
     playerSymbol: 'O',
-    playerId: playerO.id,
-    opponentId: playerX.id,
     board,
     currentTurn: 'X',
     winner: null,
@@ -95,7 +89,7 @@ const startGame = () => {
 // remove player from all state maps
 export const removePlayer = (playerId: string) => {
   games.forEach((game, gameId) => {
-    if (game.playerId === playerId || game.opponentId === playerId) {
+    if (game.playerX?.id === playerId || game.playerO?.id === playerId) {
       games.set(gameId, {
         ...game,
         error: 'CONNECTION_LOST',

@@ -8,8 +8,6 @@ export const initialGameState: GameState = {
   status: 'CONNECTED',
   gameId: null,
   playerSymbol: null,
-  playerId: null,
-  opponentId: null,
   board: [null, null, null, null, null, null, null, null, null],
   currentTurn: 'X',
   winner: null,
