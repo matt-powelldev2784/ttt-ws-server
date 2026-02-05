@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { games, setupGame } from './gameState.js'
+import { games, setupGame, updateGameState } from './gameState.js'
 import { Board, GameState, Player } from './types.js'
 
 export const connections = new Map<string, Player>()
@@ -22,6 +22,7 @@ export const addPlayerToStartGameQueue = (player: Player) => {
       board: [null, null, null, null, null, null, null, null, null],
       currentTurn: 'X',
       winner: null,
+      connectionLostTimestamp: null,
     },
   })
 
@@ -58,6 +59,7 @@ const startGame = () => {
     winner: null,
     playerX: playerX,
     playerO: playerO,
+    connectionLostTimestamp: null,
   }
 
   const playerOPayload: GameState = {
@@ -72,6 +74,7 @@ const startGame = () => {
     winner: null,
     playerX: playerX,
     playerO: playerO,
+    connectionLostTimestamp: null,
   }
 
   setupGame({
@@ -93,7 +96,12 @@ const startGame = () => {
 export const removePlayer = (playerId: string) => {
   games.forEach((game, gameId) => {
     if (game.playerId === playerId || game.opponentId === playerId) {
-      games.delete(gameId)
+      games.set(gameId, {
+        ...game,
+        error: 'CONNECTION_LOST',
+        connectionLostTimestamp: Date.now(),
+      })
+      updateGameState({ gameId })
     }
   })
 

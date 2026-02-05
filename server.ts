@@ -63,9 +63,11 @@ server.on('connection', (socket: WebSocket) => {
   })
 })
 
-// Heartbeat mechanism to detect dead connections
-const heartbeatIntervalMs = 30000
+// Heartbeat mechanism to cleanup lost connections
+const THREE_SECONDS = 3000
+const heartbeatIntervalMs = THREE_SECONDS
 setInterval(() => {
+  // remove players with dead connections
   connections.forEach((player, playerId) => {
     if (!player.isAlive) {
       player.socket.terminate()
@@ -76,8 +78,23 @@ setInterval(() => {
     player.isAlive = false
     player.socket.ping()
   })
-}, heartbeatIntervalMs)
 
+  games.forEach((game, gameId) => {
+    if (game.error === 'CONNECTION_LOST') {
+      const connectionLostDuration = game.connectionLostTimestamp
+        ? Date.now() - game.connectionLostTimestamp
+        : null
+
+      if (connectionLostDuration == null) return
+
+      // If connection has been lost for more than two minutes delete the game
+      const TWO_MINUTES = 2 * 60 * 1000
+      if (connectionLostDuration > TWO_MINUTES) {
+        games.delete(gameId)
+      }
+    }
+  })
+}, heartbeatIntervalMs)
 
 // Handle incoming messages from clients
 const handleClientMessage = (player: Player, message: RawData) => {

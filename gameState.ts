@@ -14,6 +14,7 @@ export const initialGameState: GameState = {
   currentTurn: 'X',
   winner: null,
   error: null,
+  connectionLostTimestamp: null,
 }
 
 // setup game for individual player

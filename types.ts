@@ -1,5 +1,4 @@
 import { WebSocket } from 'ws'
-import { error } from 'node:console'
 
 export type Player = {
   id: string
@@ -38,6 +37,7 @@ export type GameState = {
   error?: string | null | undefined
   playerX?: Player | undefined
   playerO?: Player | undefined
+  connectionLostTimestamp: number | null
 }
 
 export type GameMove = {
