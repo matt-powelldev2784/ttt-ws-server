@@ -1,20 +1,26 @@
-import { WebSocketServer, WebSocket } from 'ws'
+import { WebSocketServer, WebSocket, RawData } from 'ws'
 import { randomUUID } from 'node:crypto'
-import { Player, Game, Board, GameState, GameMove } from './types.js'
+import { Player } from './types.js'
 import { startGamePolling } from './gamePolling.js'
-import { error } from 'node:console'
+import {
+  games,
+  initialGameState,
+  setupGame,
+  updateBoard,
+  updateGameState,
+} from './gameState.js'
+import {
+  waitingPlayers,
+  connections,
+  addPlayerToStartGameQueue,
+  removePlayer,
+} from './playerState.js'
 
 // server setup
 const port = Number(process.env.PORT) || 8081
 const server = new WebSocketServer({
   port,
 })
-console.info(`WebSocket server is running on ${port}`)
-
-// state
-const connections = new Map<string, Player>()
-const waitingPlayers = new Map<string, Player>()
-const games = new Map<string, GameState>()
 
 // Start game polling for development and debugging purposes only
 if (process.env.NODE_ENV !== 'production') {
@@ -41,38 +47,14 @@ server.on('connection', (socket: WebSocket) => {
   })
 
   // send initial game state to client
-  const payload: GameState = {
-    ...initialGameState,
-    playerId: player.id,
-  }
-  setGameState({
+  setupGame({
     socket,
-    payload,
+    payload: { ...initialGameState, playerId: player.id },
   })
 
   // Handle incoming messages from clients
   socket.on('message', (message) => {
-    try {
-      const request = JSON.parse(message.toString())
-      // start game message
-      switch (request.type) {
-        case 'START_GAME':
-          addPlayerToStartGameQueue(player)
-          break
-
-        case 'MAKE_MOVE':
-          const { gameId, index, symbol } = request.payload
-          updateBoard({ gameId, index, symbol })
-          updateGameState({ gameId: gameId })
-          break
-
-        default:
-          console.log(`Unknown request type: ${request}`)
-      }
-    } catch (error) {
-      console.error('Error parsing message:', error)
-      return
-    }
+    handleClientMessage(player, message)
   })
 
   // Handle socket close event
@@ -80,59 +62,6 @@ server.on('connection', (socket: WebSocket) => {
     removePlayer(playerId)
   })
 })
-
-const initialGameState: GameState = {
-  type: 'GAME_STATE',
-  status: 'CONNECTED',
-  gameId: null,
-  playerSymbol: null,
-  playerId: null,
-  opponentId: null,
-  board: [null, null, null, null, null, null, null, null, null],
-  currentTurn: 'X',
-  winner: null,
-  error: null,
-}
-
-// send to client function
-type SendToClientInput = {
-  socket: WebSocket
-  payload: GameState
-}
-const setGameState = ({ socket, payload }: SendToClientInput) => {
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(payload))
-  }
-
-  if (!payload.gameId) return
-
-  games.set(payload.gameId, payload)
-}
-
-type UpdateGameStateInput = {
-  gameId: string
-}
-const updateGameState = ({ gameId }: UpdateGameStateInput) => {
-  const game = games.get(gameId)
-  const gameBoard = game?.board
-  const currentTurn = game?.currentTurn
-  const playerXSocket = game?.playerX!.socket as WebSocket
-  const playerOSocket = game?.playerO!.socket as WebSocket
-  const payload = {
-    type: 'GAME_MOVE',
-    board: gameBoard,
-    currentTurn: currentTurn,
-    error: game?.error || null,
-  }
-
-  if (playerXSocket.readyState === WebSocket.OPEN) {
-    playerXSocket.send(JSON.stringify(payload))
-  }
-
-  if (playerOSocket.readyState === WebSocket.OPEN) {
-    playerOSocket.send(JSON.stringify(payload))
-  }
-}
 
 // Heartbeat mechanism to detect dead connections
 const heartbeatIntervalMs = 30000
@@ -149,148 +78,29 @@ setInterval(() => {
   })
 }, heartbeatIntervalMs)
 
-// add player to start game queue
-const addPlayerToStartGameQueue = (player: Player) => {
-  waitingPlayers.set(player.id, player)
 
-  // send WAITING_FOR_OPPONENT message to player
-  setGameState({
-    socket: player.socket,
-    payload: {
-      type: 'GAME_STATE',
-      status: 'WAITING_FOR_OPPONENT',
-      gameId: null,
-      playerId: player.id,
-      opponentId: null,
-      playerSymbol: null,
-      board: [null, null, null, null, null, null, null, null, null],
-      currentTurn: 'X',
-      winner: null,
-    },
-  })
+// Handle incoming messages from clients
+const handleClientMessage = (player: Player, message: RawData) => {
+  try {
+    const { type } = JSON.parse(message.toString())
 
-  // If there are at least two players waiting, start a new game
-  if (waitingPlayers.size >= 2) {
-    startGame()
-  }
-}
-
-// start a new game
-const startGame = () => {
-  if (waitingPlayers.size < 2) {
-    return
-  }
-
-  const players = Array.from(waitingPlayers.values()).slice(0, 2)
-  const [playerX, playerO] = players
-  playerX.symbol = 'X'
-  playerO.symbol = 'O'
-
-  const board: Board = [null, null, null, null, null, null, null, null, null]
-
-  // send IN_PROGRESS message to both players
-  const gameId = `game-${randomUUID()}`
-  const playerXPayload: GameState = {
-    type: 'GAME_STATE',
-    status: 'IN_PROGRESS',
-    gameId,
-    playerSymbol: 'X',
-    playerId: playerX.id,
-    opponentId: playerO.id,
-    board,
-    currentTurn: 'X',
-    winner: null,
-    playerX: playerX,
-    playerO: playerO,
-  }
-
-  const playerOPayload: GameState = {
-    type: 'GAME_STATE',
-    status: 'IN_PROGRESS',
-    gameId,
-    playerSymbol: 'O',
-    playerId: playerO.id,
-    opponentId: playerX.id,
-    board,
-    currentTurn: 'X',
-    winner: null,
-    playerX: playerX,
-    playerO: playerO,
-  }
-
-  setGameState({
-    socket: playerX.socket,
-    payload: playerXPayload,
-  })
-
-  setGameState({
-    socket: playerO.socket,
-    payload: playerOPayload,
-  })
-
-  // Remove players from waiting list
-  waitingPlayers.delete(playerX.id)
-  waitingPlayers.delete(playerO.id)
-}
-
-// remove player from all state maps
-const removePlayer = (playerId: string) => {
-  games.forEach((game, gameId) => {
-    if (game.playerId === playerId || game.opponentId === playerId) {
-      games.delete(gameId)
+    if (!type) {
+      console.log(`Invalid message format: ${message}`)
+      return
     }
-  })
 
-  waitingPlayers.delete(playerId)
-  connections.delete(playerId)
-}
+    if (type === 'START_GAME') {
+      addPlayerToStartGameQueue(player)
+      return
+    }
 
-type UpdateBoardInput = {
-  gameId: string
-  index: number
-  symbol: 'X' | 'O'
-}
-
-const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
-  const game = games.get(gameId)
-
-  // check if game exists
-  if (!game) {
-    games.set(gameId, {
-      ...initialGameState,
-      error: 'Game not found',
-    })
-    return
+    if (type === 'MAKE_MOVE') {
+      const { gameId, index, symbol } = JSON.parse(message.toString()).payload
+      updateBoard({ gameId, index, symbol })
+      updateGameState({ gameId })
+      return
+    }
+  } catch (error) {
+    console.error('Error parsing message:', error)
   }
-
-  // Check if it's the player's turn
-  if (game!.currentTurn !== symbol) {
-    games.set(gameId, {
-      ...game!,
-      error: 'Not your turn',
-    })
-    return
-  }
-
-  // Check if the cell is already occupied
-  if (game.board[index] !== null) {
-    games.set(gameId, {
-      ...game!,
-      error: 'Cell already occupied by your symbol',
-    })
-    return
-  }
-
-  // Update the board
-  const newBoard: Board = [...game.board]
-  newBoard[index] = symbol
-
-  const updatedGameState: GameState = {
-    ...game,
-    board: newBoard as Board,
-    currentTurn: symbol === 'X' ? 'O' : 'X',
-    error: null,
-  }
-
-  games.set(gameId, updatedGameState)
 }
