@@ -85,7 +85,7 @@ type StartGamePollingInput = {
   games: GamesMap
 }
 
-export const startGamePolling = ({
+export const startGameLogging = ({
   connections,
   waitingPlayers,
   games,

@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket, RawData } from 'ws'
 import { randomUUID } from 'node:crypto'
 import { Player } from './types.js'
-import { startGamePolling } from './gamePolling.js'
+import { startGameLogging } from './gameLogging.js'
 import {
   games,
   initialGameState,
@@ -22,9 +22,9 @@ const server = new WebSocketServer({
   port,
 })
 
-// Start game polling for development and debugging purposes only
+// Start game logs in development mode only
 if (process.env.NODE_ENV !== 'production') {
-  startGamePolling({ connections, waitingPlayers, games })
+  startGameLogging({ connections, waitingPlayers, games })
 }
 
 // websocket connection handler
