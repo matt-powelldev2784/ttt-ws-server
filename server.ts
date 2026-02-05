@@ -45,7 +45,7 @@ server.on('connection', (socket: WebSocket) => {
     ...initialGameState,
     playerId: player.id,
   }
-  initialiseGameState({
+  setGameState({
     socket,
     payload,
   })
@@ -99,7 +99,7 @@ type SendToClientInput = {
   socket: WebSocket
   payload: GameState
 }
-const initialiseGameState = ({ socket, payload }: SendToClientInput) => {
+const setGameState = ({ socket, payload }: SendToClientInput) => {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload))
   }
@@ -154,7 +154,7 @@ const addPlayerToStartGameQueue = (player: Player) => {
   waitingPlayers.set(player.id, player)
 
   // send WAITING_FOR_OPPONENT message to player
-  initialiseGameState({
+  setGameState({
     socket: player.socket,
     payload: {
       type: 'GAME_STATE',
@@ -218,12 +218,12 @@ const startGame = () => {
     playerO: playerO,
   }
 
-  initialiseGameState({
+  setGameState({
     socket: playerX.socket,
     payload: playerXPayload,
   })
 
-  initialiseGameState({
+  setGameState({
     socket: playerO.socket,
     payload: playerOPayload,
   })
