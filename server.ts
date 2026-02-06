@@ -3,8 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { Player } from './types.js'
 import { startGameLogging } from './gameLogging.js'
 import {
+  checkWinner,
   games,
   initialGameState,
+  setGameResult,
   setupGame,
   updateBoard,
   updateGameState,
@@ -79,6 +81,7 @@ setInterval(() => {
     player.socket.ping()
   })
 
+  // remove games with lost connections
   games.forEach((game, gameId) => {
     if (game.error === 'CONNECTION_LOST') {
       const connectionLostDuration = game.connectionLostTimestamp
@@ -99,7 +102,9 @@ setInterval(() => {
 // Handle incoming messages from clients
 const handleClientMessage = (player: Player, message: RawData) => {
   try {
-    const { type } = JSON.parse(message.toString())
+    const request = JSON.parse(message.toString())
+    const { type } = request
+    const { gameId, index, symbol } = request.payload
 
     if (!type) {
       console.log(`Invalid message format: ${message}`)
@@ -112,9 +117,12 @@ const handleClientMessage = (player: Player, message: RawData) => {
     }
 
     if (type === 'MAKE_MOVE') {
-      const { gameId, index, symbol } = JSON.parse(message.toString()).payload
       updateBoard({ gameId, index, symbol })
       updateGameState({ gameId })
+
+      // check for winner
+      const result = checkWinner({ gameId, symbol })
+      if (result) setGameResult({ gameId, result })
       return
     }
   } catch (error) {

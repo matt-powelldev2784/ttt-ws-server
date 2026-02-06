@@ -53,6 +53,7 @@ const listGameBoards = (games: GamesMap) => {
   console.log('gamesArray.length', gamesArray.length)
   gamesArray.forEach((game, i) => {
     console.log(`Game:${game.gameId} = ${game.board} `)
+    console.log('game.status', game.status)
   })
   console.log('  ')
 }
@@ -69,15 +70,25 @@ const listDeadConnections = (connections: ConnectionsMap): void => {
   console.log('  ')
 }
 
-// const listGameState = (games: GamesMap): void => {
-//   const gamesArray = [...games.values()]
-//   console.log('------------- Game States ---------------')
-//   console.log('gamesArray.length', gamesArray.length)
-//   gamesArray.forEach((game, i) => {
-//     console.log(`Game State:${i} = ${JSON.stringify(game)}`)
-//   })
-//   console.log('  ')
-// }
+const listGameState = (games: GamesMap): void => {
+  const gamesArray = [...games.values()]
+  console.log('------------- Game States ---------------')
+  console.log('gamesArray.length', gamesArray.length)
+  gamesArray.forEach((game, i) => {
+    console.log(`Game State:${i} = ${JSON.stringify(game)}`)
+  })
+  console.log('  ')
+}
+
+const listWinnerState = (games: GamesMap): void => {
+  const gamesArray = [...games.values()]
+  console.log('------------- Game Winners ---------------')
+  console.log('gamesArray.length', gamesArray.length)
+  gamesArray.forEach((game, i) => {
+    console.log(`Game has winner:${i} = ${game.winner} `)
+  })
+  console.log('  ')
+}
 
 type StartGamePollingInput = {
   connections: ConnectionsMap
@@ -96,5 +107,6 @@ export const startGameLogging = ({
   setInterval(() => listGames(games), 5000)
   setInterval(() => listDeadConnections(connections), 5000)
   setInterval(() => listGameBoards(games), 5000)
-  // setInterval(() => listGameState(games), 5000)
+  setInterval(() => listGameState(games), 5000)
+  setInterval(() => listWinnerState(games), 5000)
 }

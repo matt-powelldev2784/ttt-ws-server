@@ -36,15 +36,20 @@ type UpdateGameStateInput = {
 }
 export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
   const game = games.get(gameId)
+
+  if (!game) return
+  if (!game.playerX || !game.playerO) return
+
   const gameBoard = game?.board
   const currentTurn = game?.currentTurn
-  const playerXSocket = game?.playerX!.socket as WebSocket
-  const playerOSocket = game?.playerO!.socket as WebSocket
+  const playerXSocket = game?.playerX.socket as WebSocket
+  const playerOSocket = game?.playerO.socket as WebSocket
   const payload = {
     type: 'GAME_MOVE',
     board: gameBoard,
     currentTurn: currentTurn,
-    error: game?.error || null,
+    error: game.error || null,
+    winner: game.winner || null,
   }
 
   if (playerXSocket.readyState === WebSocket.OPEN) {
@@ -94,15 +99,83 @@ export const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
   }
 
   // Update the board
-  const newBoard = [...game.board] as Board
+  const newBoard = game.board
   newBoard[index] = symbol
 
   const updatedGameState: GameState = {
     ...game,
-    board: newBoard as Board,
+    board: newBoard,
     currentTurn: symbol === 'X' ? 'O' : 'X',
     error: null,
   }
 
   games.set(gameId, updatedGameState)
+}
+
+const winningCombinations: number[][] = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+]
+
+type CheckWinnerInput = {
+  gameId: string
+  symbol: 'X' | 'O'
+}
+
+export const checkWinner = ({ gameId, symbol }: CheckWinnerInput) => {
+  const board = games.get(gameId)?.board
+
+  if (!board) return null
+
+  if (board.every((cell) => cell !== null)) {
+    return 'DRAW'
+  }
+
+  const isWinner = winningCombinations.some((combination) =>
+    combination.every((index) => board[index] === symbol),
+  )
+  if (isWinner) {
+    return symbol
+  }
+
+  return null
+}
+
+type SetGameWinnerInput = {
+  gameId: string
+  result: 'X' | 'O' | 'DRAW'
+}
+
+export const setGameResult = ({ gameId, result }: SetGameWinnerInput) => {
+  const game = games.get(gameId)
+
+  if (!game) return
+
+  // update server state
+  const updatedGameState: GameState = {
+    ...game,
+    winner: result,
+  }
+  games.set(gameId, updatedGameState)
+
+  // send message to client
+  const payload = {
+    type: 'SET_WINNER',
+    error: game.error || null,
+    winner: result,
+  }
+
+  if (game.playerX?.socket.readyState === WebSocket.OPEN) {
+    game.playerX.socket.send(JSON.stringify(payload))
+  }
+
+  if (game.playerO?.socket.readyState === WebSocket.OPEN) {
+    game.playerO.socket.send(JSON.stringify(payload))
+  }
 }
