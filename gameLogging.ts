@@ -80,12 +80,12 @@ const listGameState = (games: GamesMap): void => {
   console.log('  ')
 }
 
-const listWinnerState = (games: GamesMap): void => {
+const listResultState = (games: GamesMap): void => {
   const gamesArray = [...games.values()]
-  console.log('------------- Game Winners ---------------')
+  console.log('------------- Game Result ---------------')
   console.log('gamesArray.length', gamesArray.length)
   gamesArray.forEach((game, i) => {
-    console.log(`Game has winner:${i} = ${game.winner} `)
+    console.log(`Game has result :${i} = ${game.result} `)
   })
   console.log('  ')
 }
@@ -108,5 +108,5 @@ export const startGameLogging = ({
   setInterval(() => listDeadConnections(connections), 5000)
   setInterval(() => listGameBoards(games), 5000)
   setInterval(() => listGameState(games), 5000)
-  setInterval(() => listWinnerState(games), 5000)
+  setInterval(() => listResultState(games), 5000)
 }

@@ -10,7 +10,7 @@ export const initialGameState: GameState = {
   playerSymbol: null,
   board: [null, null, null, null, null, null, null, null, null],
   currentTurn: 'X',
-  winner: null,
+  result: null,
   error: null,
   connectionLostTimestamp: null,
 }
@@ -49,7 +49,7 @@ export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
     board: gameBoard,
     currentTurn: currentTurn,
     error: game.error || null,
-    winner: game.winner || null,
+    result: game.result || null,
   }
 
   if (playerXSocket.readyState === WebSocket.OPEN) {
@@ -123,12 +123,12 @@ const winningCombinations: number[][] = [
   [2, 4, 6],
 ]
 
-type CheckWinnerInput = {
+type CheckResultInput = {
   gameId: string
   symbol: 'X' | 'O'
 }
 
-export const checkWinner = ({ gameId, symbol }: CheckWinnerInput) => {
+export const checkResult = ({ gameId, symbol }: CheckResultInput) => {
   const board = games.get(gameId)?.board
 
   if (!board) return null
@@ -147,12 +147,12 @@ export const checkWinner = ({ gameId, symbol }: CheckWinnerInput) => {
   return null
 }
 
-type SetGameWinnerInput = {
+type SetGameResultInput = {
   gameId: string
   result: 'X' | 'O' | 'DRAW'
 }
 
-export const setGameResult = ({ gameId, result }: SetGameWinnerInput) => {
+export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
   const game = games.get(gameId)
 
   if (!game) return
@@ -160,15 +160,15 @@ export const setGameResult = ({ gameId, result }: SetGameWinnerInput) => {
   // update server state
   const updatedGameState: GameState = {
     ...game,
-    winner: result,
+    result,
   }
   games.set(gameId, updatedGameState)
 
   // send message to client
   const payload = {
-    type: 'SET_WINNER',
+    type: 'SET_RESULT',
     error: game.error || null,
-    winner: result,
+    result: result,
   }
 
   if (game.playerX?.socket.readyState === WebSocket.OPEN) {

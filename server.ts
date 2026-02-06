@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { Player } from './types.js'
 import { startGameLogging } from './gameLogging.js'
 import {
-  checkWinner,
+  checkResult,
   games,
   initialGameState,
   setGameResult,
@@ -120,8 +120,8 @@ const handleClientMessage = (player: Player, message: RawData) => {
       updateBoard({ gameId, index, symbol })
       updateGameState({ gameId })
 
-      // check for winner
-      const result = checkWinner({ gameId, symbol })
+      // check for result
+      const result = checkResult({ gameId, symbol })
       if (result) setGameResult({ gameId, result })
       return
     }

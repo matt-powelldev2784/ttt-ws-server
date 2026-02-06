@@ -31,7 +31,7 @@ export type GameState = {
   playerSymbol: 'X' | 'O' | null
   board: Board
   currentTurn: 'X' | 'O'
-  winner: 'X' | 'O' | 'DRAW' | null
+  result: 'X' | 'O' | 'DRAW' | null
   error?: string | null | undefined
   playerX?: Player | undefined
   playerO?: Player | undefined
