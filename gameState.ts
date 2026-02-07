@@ -13,6 +13,7 @@ export const initialGameState: GameState = {
   result: null,
   error: null,
   connectionLostTimestamp: null,
+  gameMessage: null,
 }
 
 // setup game for individual player
@@ -169,6 +170,8 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
     type: 'SET_RESULT',
     error: game.error || null,
     result: result,
+    gameMessage:
+      result === 'DRAW' ? 'Game ended in a draw!' : `Player ${result} wins!`,
   }
 
   if (game.playerX?.socket.readyState === WebSocket.OPEN) {
@@ -177,5 +180,27 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
 
   if (game.playerO?.socket.readyState === WebSocket.OPEN) {
     game.playerO.socket.send(JSON.stringify(payload))
+  }
+}
+
+export const setLostConnection = (gameId: string) => {
+  const game = games.get(gameId)
+
+  if (!game) return
+
+  const updatedGameState: GameState = {
+    ...game,
+    status: 'CONNECTION_LOST',
+    gameMessage: 'Connection with opponent lost.',
+  }
+
+  games.set(gameId, updatedGameState)
+
+  if (game.playerX?.socket.readyState === WebSocket.OPEN) {
+    game.playerX.socket.send(JSON.stringify(updatedGameState))
+  }
+
+  if (game.playerO?.socket.readyState === WebSocket.OPEN) {
+    game.playerO.socket.send(JSON.stringify(updatedGameState))
   }
 }

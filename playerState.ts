@@ -21,6 +21,7 @@ export const addPlayerToStartGameQueue = (player: Player) => {
       currentTurn: 'X',
       result: null,
       connectionLostTimestamp: null,
+      gameMessage: 'Waiting for opponent to join...',
     },
   })
 
@@ -56,6 +57,7 @@ const startGame = () => {
     playerX: playerX,
     playerO: playerO,
     connectionLostTimestamp: null,
+    gameMessage: "It's your turn!",
   }
 
   const playerOPayload: GameState = {
@@ -69,6 +71,7 @@ const startGame = () => {
     playerX: playerX,
     playerO: playerO,
     connectionLostTimestamp: null,
+    gameMessage: "Waiting for opponent's move...",
   }
 
   setupGame({

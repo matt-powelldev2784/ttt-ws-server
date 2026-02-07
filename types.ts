@@ -24,6 +24,7 @@ type Status =
   | 'WAITING_FOR_OPPONENT'
   | 'IN_PROGRESS'
   | 'COMPLETED'
+  | 'CONNECTION_LOST'
 
 export type GameState = {
   type: 'GAME_STATE'
@@ -37,6 +38,7 @@ export type GameState = {
   playerX?: Player | undefined
   playerO?: Player | undefined
   connectionLostTimestamp: number | null
+  gameMessage: string | null
 }
 
 export type UpdateBoard = {

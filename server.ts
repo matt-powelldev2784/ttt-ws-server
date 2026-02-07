@@ -7,6 +7,7 @@ import {
   games,
   initialGameState,
   setGameResult,
+  setLostConnection,
   setupGame,
   updateBoard,
   updateGameState,
@@ -89,6 +90,8 @@ setInterval(() => {
         : null
 
       if (connectionLostDuration == null) return
+
+      setLostConnection(gameId)
 
       // If connection has been lost for more than two minutes delete the game
       const TWO_MINUTES = 2 * 60 * 1000
