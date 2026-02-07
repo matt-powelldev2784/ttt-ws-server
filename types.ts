@@ -44,4 +44,5 @@ export type UpdateBoard = {
   board: Board
   currentTurn: 'X' | 'O'
   error: string | null
+  result: 'X' | 'O' | 'DRAW' | null
 }
