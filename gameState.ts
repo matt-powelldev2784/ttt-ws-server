@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws'
-import { Board, GameState, UpdateBoard } from './types.js'
+import { GameState, UpdateBoard } from './types.js'
 
 export const games = new Map<string, GameState>()
 
@@ -93,7 +93,7 @@ export const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
   if (game.board[index] !== null) {
     games.set(gameId, {
       ...game!,
-      error: 'Cell already occupied by your symbol',
+      error: 'Cell already occupied',
     })
     return
   }
