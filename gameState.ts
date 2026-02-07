@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws'
-import { Board, GameState } from './types.js'
+import { Board, GameState, UpdateBoard } from './types.js'
 
 export const games = new Map<string, GameState>()
 
@@ -44,8 +44,8 @@ export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
   const currentTurn = game?.currentTurn
   const playerXSocket = game?.playerX.socket as WebSocket
   const playerOSocket = game?.playerO.socket as WebSocket
-  const payload = {
-    type: 'GAME_MOVE',
+  const payload: UpdateBoard = {
+    type: 'UPDATE_BOARD',
     board: gameBoard,
     currentTurn: currentTurn,
     error: game.error || null,
