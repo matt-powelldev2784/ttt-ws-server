@@ -134,15 +134,15 @@ export const checkResult = ({ gameId, symbol }: CheckResultInput) => {
 
   if (!board) return null
 
-  if (board.every((cell) => cell !== null)) {
-    return 'DRAW'
-  }
-
   const isWinner = winningCombinations.some((combination) =>
     combination.every((index) => board[index] === symbol),
   )
   if (isWinner) {
     return symbol
+  }
+
+  if (board.every((cell) => cell !== null)) {
+    return 'DRAW'
   }
 
   return null
