@@ -34,10 +34,6 @@ npm run start
 
 ## WebSocket API
 
-All messages are JSON.
-
-## Frontend integration
-
 ### 1) Create WebSocket connection
 
 Setup websocket connection when the app loads and create message handler to
