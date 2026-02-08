@@ -32,11 +32,6 @@ npm run build
 npm run start
 ```
 
-## Environment variables
-
-- `PORT`: WebSocket server port. Default: `8081`.
-- `NODE_ENV` (optional): Set to `production` to disable verbose game logging.
-
 ## WebSocket API
 
 All messages are JSON.
