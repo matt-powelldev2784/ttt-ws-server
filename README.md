@@ -127,27 +127,6 @@ ws.send(
 }
 ```
 
-### Client → Server
-
-**Start matchmaking**
-
-```json
-{ "type": "START_GAME" }
-```
-
-**Make a move**
-
-```json
-{
-  "type": "MAKE_MOVE",
-  "payload": {
-    "gameId": "game-...",
-    "index": 0,
-    "symbol": "X"
-  }
-}
-```
-
 ## Notes
 
 - The server uses a heartbeat to detect dead connections and clean up state.
