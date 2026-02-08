@@ -104,7 +104,7 @@ ws.onmessage = (event) => {
 }
 ```
 
-**Example JSON response after game complete **
+**Example JSON response after game complete**
 
 ```json
 {
