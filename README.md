@@ -32,7 +32,7 @@ npm run build
 npm run start
 ```
 
-## WebSocket API
+## WebSocket API Frontend Setup
 
 ### 1) Create WebSocket connection
 
