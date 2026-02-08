@@ -53,7 +53,7 @@ useEffect(() => {
   socketRef.current = socket
 
   const handleMessage = (event: MessageEvent) => {
-    //setup function to handle incoming messages and update game state
+    // setup function to handle incoming messages and update game state
     handleSocketMessage({ event, setGameState(payload) })
   }
 
