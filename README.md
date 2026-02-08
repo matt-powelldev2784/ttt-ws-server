@@ -14,22 +14,27 @@ player connections, matchmaking, game state, and heartbeat cleanup.
 npm install
 ```
 
-## Run (dev)
+## Run development server
 
 ```bash
 npm run dev
 ```
 
-## Build & run
+## Build
 
 ```bash
 npm run build
-npm start
+```
+
+## Run production server
+
+```bash
+npm run start
 ```
 
 ## Environment variables
 
-- `PORT` (optional): WebSocket server port. Default: `8081`.
+- `PORT`: WebSocket server port. Default: `8081`.
 - `NODE_ENV` (optional): Set to `production` to disable verbose game logging.
 
 ## WebSocket API
