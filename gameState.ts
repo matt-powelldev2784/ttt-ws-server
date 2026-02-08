@@ -31,42 +31,28 @@ export const setupGame = ({ socket, payload }: setGameStateInput) => {
   games.set(payload.gameId, payload)
 }
 
-// update game board based on player move
-type UpdateBoardInput = {
+// update server state when player makes a move
+type UpdateServerStateInput = {
   gameId: string
   index: number
   symbol: 'X' | 'O'
 }
 
-export const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
+export const updateServerState = ({
+  gameId,
+  index,
+  symbol,
+}: UpdateServerStateInput) => {
   const game = games.get(gameId)
 
   // check if game exists
-  if (!game) {
-    games.set(gameId, {
-      ...initialGameState,
-      error: 'Game not found',
-    })
-    return
-  }
+  if (!game) return
 
   // Check if it's the player's turn
-  if (game!.currentTurn !== symbol) {
-    games.set(gameId, {
-      ...game!,
-      error: 'Not your turn',
-    })
-    return
-  }
+  if (game!.currentTurn !== symbol) return
 
   // Check if the cell is already occupied
-  if (game.board[index] !== null) {
-    games.set(gameId, {
-      ...game!,
-      error: 'Cell already occupied',
-    })
-    return
-  }
+  if (game.board[index] !== null) return
 
   // Update the board
   const newBoard = game.board
@@ -83,20 +69,21 @@ export const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
   games.set(gameId, updatedGameState)
 }
 
-// update game state and send to both players
-type UpdateGameStateInput = {
+// update the client state after server state has been updated
+type UpdateClientStateInput = {
   gameId: string
 }
-export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
+
+export const updateClientState = ({ gameId }: UpdateClientStateInput) => {
   const game = games.get(gameId)
 
   if (!game) return
   if (!game.playerX || !game.playerO) return
 
-  const gameBoard = game?.board
-  const currentTurn = game?.currentTurn
-  const playerXSocket = game?.playerX.socket
-  const playerOSocket = game?.playerO.socket
+  const gameBoard = game.board
+  const currentTurn = game.currentTurn
+  const playerXSocket = game.playerX.socket
+  const playerOSocket = game.playerO.socket
   const updateGameState: UpdateBoard = {
     type: 'UPDATE_BOARD',
     board: gameBoard,
@@ -131,6 +118,7 @@ export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
   }
 }
 
+// function to check game result
 const winningCombinations: number[][] = [
   [0, 1, 2],
   [3, 4, 5],
@@ -166,6 +154,8 @@ export const checkResult = ({ gameId, symbol }: CheckResultInput) => {
   return null
 }
 
+
+// set server and client state when game is completed
 type SetGameResultInput = {
   gameId: string
   result: 'X' | 'O' | 'DRAW'
@@ -205,6 +195,9 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
   }
 }
 
+
+// set server game state to connection lost when player disconnects
+// update client status to connection lost if the game is not already completed
 export const setLostConnection = (gameId: string) => {
   const game = games.get(gameId)
 

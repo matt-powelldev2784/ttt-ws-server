@@ -9,8 +9,8 @@ import {
   setGameResult,
   setLostConnection,
   setupGame,
-  updateBoard,
-  updateGameState,
+  updateServerState,
+  updateClientState,
 } from './gameState.js'
 import {
   waitingPlayers,
@@ -119,8 +119,8 @@ const handleClientMessage = (player: Player, message: RawData) => {
     }
 
     if (type === 'MAKE_MOVE') {
-      updateBoard({ gameId, index, symbol })
-      updateGameState({ gameId })
+      updateServerState({ gameId, index, symbol })
+      updateClientState({ gameId })
 
       // check for result
       const result = checkResult({ gameId, symbol })

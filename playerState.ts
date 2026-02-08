@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { games, setupGame, updateGameState } from './gameState.js'
+import { games, setupGame, updateClientState } from './gameState.js'
 import { Board, GameState, Player } from './types.js'
 
 export const connections = new Map<string, Player>()
