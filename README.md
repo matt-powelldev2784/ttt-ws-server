@@ -45,9 +45,12 @@ All messages are JSON.
 
 ### 1) Create WebSocket connection
 
+Setup websocket connection when the app loads and create message handler to
+update local game state based on server responses.
+
 ```ts
 const socketRef = useRef<WebSocket | null>(null)
-const serverUrl = import.meta.env.VITE_SERVER_URL
+const serverUrl = 'ws://localhost:8081/ws'
 
 // connect to server and set up message handler
 useEffect(() => {
@@ -73,7 +76,10 @@ useEffect(() => {
 }, [])
 ```
 
-### 2) To start game, setup function to send start game message to server. Server will match player with opponent and respond with initial game state.
+### 2) To start game
+
+Setup function to send start game message to server. Server will match player
+with opponent and respond with initial game state.
 
 ```ts
 const sendMessage = (message: string) => {
@@ -98,7 +104,9 @@ sendMessage(startGameMessage)
 
 ### 3) Handle server messages based on 3 types:
 
-- `GAME_STATE`: update local game state with server response
+**'GAME_STATE'**
+
+Update game state with server response
 
 **Example JSON response after start game request**
 
@@ -116,7 +124,9 @@ sendMessage(startGameMessage)
 }
 ```
 
-- `UPDATE_BOARD`: update local board and current turn after opponent move
+**'UPDATE_BOARD'**
+
+Update board and current turn state after opponent move
 
 **Example JSON response after board update**
 
@@ -131,7 +141,9 @@ sendMessage(startGameMessage)
 }
 ```
 
-- `SET_RESULT`: update local game state with final result after game completion
+**'SET_RESULT'**
+
+Update game state with final result after game completion
 
 **Example JSON response after game complete**
 
@@ -151,8 +163,9 @@ sendMessage(startGameMessage)
 const makeMoveMessage = JSON.stringify({
   type: 'MAKE_MOVE',
   payload: { gameId, index, symbol },
-  sendMessage(startGameMessage)
 })
+
+sendMessage(startGameMessage)
 ```
 
 ## Notes
