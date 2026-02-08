@@ -97,7 +97,15 @@ sendMessage(startGameMessage)
 
 **'GAME_STATE'**
 
-Update game state with server response
+Update client game state with server response. Use the gameMessage field to
+display status updates to the user. gameMessage examples:
+
+- "Waiting for opponent to join..."
+- "Your turn!"
+- "Waiting for opponent's move..."
+- "Player X wins!"
+- "Player O wins!"
+- "Game ended in a draw."
 
 **Example JSON response after start game request**
 
@@ -117,7 +125,7 @@ Update game state with server response
 
 **'UPDATE_BOARD'**
 
-Update board and current turn state after opponent move
+Update client board and current turn state after opponent move
 
 **Example JSON response after board update**
 
@@ -134,7 +142,7 @@ Update board and current turn state after opponent move
 
 **'SET_RESULT'**
 
-Update game state with final result after game completion
+Update client game state with final result after game completion
 
 **Example JSON response after game complete**
 
