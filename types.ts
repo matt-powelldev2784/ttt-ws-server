@@ -1,5 +1,4 @@
 import { WebSocket } from 'ws'
-import { error } from 'node:console'
 
 export type Player = {
   id: string
@@ -47,4 +46,5 @@ export type UpdateBoard = {
   currentTurn: 'X' | 'O'
   error: string | null
   result: 'X' | 'O' | 'DRAW' | null
+  gameMessage: string | null
 }

@@ -101,7 +101,6 @@ export const removePlayer = (playerId: string) => {
         error: 'CONNECTION_LOST',
         connectionLostTimestamp: Date.now(),
       })
-      updateGameState({ gameId })
     }
   })
 

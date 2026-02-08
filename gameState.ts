@@ -31,37 +31,6 @@ export const setupGame = ({ socket, payload }: setGameStateInput) => {
   games.set(payload.gameId, payload)
 }
 
-// update game state and send to both players
-type UpdateGameStateInput = {
-  gameId: string
-}
-export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
-  const game = games.get(gameId)
-
-  if (!game) return
-  if (!game.playerX || !game.playerO) return
-
-  const gameBoard = game?.board
-  const currentTurn = game?.currentTurn
-  const playerXSocket = game?.playerX.socket as WebSocket
-  const playerOSocket = game?.playerO.socket as WebSocket
-  const payload: UpdateBoard = {
-    type: 'UPDATE_BOARD',
-    board: gameBoard,
-    currentTurn: currentTurn,
-    error: game.error || null,
-    result: game.result || null,
-  }
-
-  if (playerXSocket.readyState === WebSocket.OPEN) {
-    playerXSocket.send(JSON.stringify(payload))
-  }
-
-  if (playerOSocket.readyState === WebSocket.OPEN) {
-    playerOSocket.send(JSON.stringify(payload))
-  }
-}
-
 // update game board based on player move
 type UpdateBoardInput = {
   gameId: string
@@ -105,12 +74,61 @@ export const updateBoard = ({ gameId, index, symbol }: UpdateBoardInput) => {
 
   const updatedGameState: GameState = {
     ...game,
+    status: 'IN_PROGRESS',
     board: newBoard,
     currentTurn: symbol === 'X' ? 'O' : 'X',
     error: null,
   }
 
   games.set(gameId, updatedGameState)
+}
+
+// update game state and send to both players
+type UpdateGameStateInput = {
+  gameId: string
+}
+export const updateGameState = ({ gameId }: UpdateGameStateInput) => {
+  const game = games.get(gameId)
+
+  if (!game) return
+  if (!game.playerX || !game.playerO) return
+
+  const gameBoard = game?.board
+  const currentTurn = game?.currentTurn
+  const playerXSocket = game?.playerX.socket
+  const playerOSocket = game?.playerO.socket
+  const updateGameState: UpdateBoard = {
+    type: 'UPDATE_BOARD',
+    board: gameBoard,
+    currentTurn: currentTurn,
+    error: game.error || null,
+    result: game.result || null,
+    gameMessage: null,
+  }
+
+  const playerXPayload: UpdateBoard = {
+    ...updateGameState,
+    gameMessage:
+      game.currentTurn === 'X'
+        ? "It's your turn!"
+        : "Waiting for opponent's move...",
+  }
+
+  const playerOPayload: UpdateBoard = {
+    ...updateGameState,
+    gameMessage:
+      game.currentTurn === 'O'
+        ? "It's your turn!"
+        : "Waiting for opponent's move...",
+  }
+
+  if (playerXSocket.readyState === WebSocket.OPEN) {
+    playerXSocket.send(JSON.stringify(playerXPayload))
+  }
+
+  if (playerOSocket.readyState === WebSocket.OPEN) {
+    playerOSocket.send(JSON.stringify(playerOPayload))
+  }
 }
 
 const winningCombinations: number[][] = [
@@ -161,13 +179,17 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
   // update server state
   const updatedGameState: GameState = {
     ...game,
+    status: 'COMPLETED',
     result,
+    gameMessage:
+      result === 'DRAW' ? 'Game ended in a draw!' : `Player ${result} wins!`,
   }
   games.set(gameId, updatedGameState)
 
   // send message to client
   const payload = {
     type: 'SET_RESULT',
+    status: 'COMPLETED',
     error: game.error || null,
     result: result,
     gameMessage:
@@ -190,8 +212,7 @@ export const setLostConnection = (gameId: string) => {
 
   const updatedGameState: GameState = {
     ...game,
-    status: 'CONNECTION_LOST',
-    gameMessage: 'Connection with opponent lost.',
+    status: game.status === 'COMPLETED' ? game.status : 'CONNECTION_LOST',
   }
 
   games.set(gameId, updatedGameState)

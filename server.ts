@@ -91,11 +91,10 @@ setInterval(() => {
 
       if (connectionLostDuration == null) return
 
-      setLostConnection(gameId)
-
       // If connection has been lost for more than two minutes delete the game
-      const TWO_MINUTES = 2 * 60 * 1000
-      if (connectionLostDuration > TWO_MINUTES) {
+      const THIRTY_SECONDS = 0.5 * 60 * 1000
+      if (connectionLostDuration > THIRTY_SECONDS) {
+        setLostConnection(gameId)
         games.delete(gameId)
       }
     }
