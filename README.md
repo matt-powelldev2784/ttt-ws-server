@@ -41,16 +41,59 @@ All messages are JSON.
 ### 1) Create WebSocket connection
 
 ```ts
-const ws = new WebSocket('ws://localhost:8081')
+const socketRef = useRef<WebSocket | null>(null)
+const serverUrl = import.meta.env.VITE_SERVER_URL
+
+// connect to server and set up message handler
+useEffect(() => {
+  if (socketRef.current) {
+    return
+  }
+
+  const socket = new WebSocket(serverUrl)
+  socketRef.current = socket
+
+  const handleMessage = (event: MessageEvent) => {
+    //setup function to handle incoming messages and update game state
+    handleSocketMessage({ event, setGameState(payload) })
+  }
+
+  socket.addEventListener('message', handleMessage)
+
+  return () => {
+    socket.removeEventListener('message', handleMessage)
+    socket.close()
+    socketRef.current = null
+  }
+}, [])
 ```
 
-### 2) To start game
+### 2) To start game, setup function to send start game message to server. Server will match player with opponent and respond with initial game state.
 
 ```ts
-ws.onopen = () => {
-  ws.send(JSON.stringify({ type: 'START_GAME', payload: {} }))
+const sendMessage = (message: string) => {
+  const socket = socketRef.current
+  if (!socket) {
+    return
+  }
+
+  if (socket.readyState !== WebSocket.OPEN) {
+    socket.addEventListener('open', () => socket.send(message), {
+      once: true,
+    })
+    return
+  }
+
+  socket.send(message)
 }
+
+const startGameMessage = JSON.stringify({ type: 'START_GAME', payload: {} }))
+sendMessage(startGameMessage)
 ```
+
+### 3) Handle server messages based on 3 types:
+
+- `GAME_STATE`: update local game state with server response
 
 **Example JSON response after start game request**
 
@@ -68,39 +111,7 @@ ws.onopen = () => {
 }
 ```
 
-### 3) Handle server messages
-
-```ts
-ws.onmessage = (event) => {
-  const message = JSON.parse(event.data)
-
-  if (message.type === 'GAME_STATE') {
-    // full state update
-    // status, gameId, playerSymbol, board, currentTurn, error, gameMessage
-  }
-
-  if (message.type === 'UPDATE_BOARD') {
-    // board + turn only
-    // board, currentTurn, error, result
-  }
-
-  if (message.type === 'SET_RESULT') {
-    // end of game
-    // result, gameMessage
-  }
-}
-```
-
-### 4) Send a move
-
-```ts
-ws.send(
-  JSON.stringify({
-    type: 'MAKE_MOVE',
-    payload: { gameId, index, symbol },
-  }),
-)
-```
+- `UPDATE_BOARD`: update local board and current turn after opponent move
 
 **Example JSON response after board update**
 
@@ -115,6 +126,8 @@ ws.send(
 }
 ```
 
+- `SET_RESULT`: update local game state with final result after game completion
+
 **Example JSON response after game complete**
 
 ```json
@@ -125,6 +138,16 @@ ws.send(
   "result": "X",
   "gameMessage": "Player X wins!"
 }
+```
+
+### 4) Send a move
+
+```ts
+const makeMoveMessage = JSON.stringify({
+  type: 'MAKE_MOVE',
+  payload: { gameId, index, symbol },
+  sendMessage(startGameMessage)
+})
 ```
 
 ## Notes
