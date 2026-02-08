@@ -91,6 +91,17 @@ ws.onmessage = (event) => {
 }
 ```
 
+### 4) Send a move
+
+```ts
+ws.send(
+  JSON.stringify({
+    type: 'MAKE_MOVE',
+    payload: { gameId, index, symbol },
+  }),
+)
+```
+
 **Example JSON response after board update**
 
 ```json
@@ -114,17 +125,6 @@ ws.onmessage = (event) => {
   "result": "X",
   "gameMessage": "Player X wins!"
 }
-```
-
-### 4) Send a move
-
-```ts
-ws.send(
-  JSON.stringify({
-    type: 'MAKE_MOVE',
-    payload: { gameId, index, symbol },
-  }),
-)
 ```
 
 ### Client → Server
