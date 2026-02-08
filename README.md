@@ -36,19 +36,35 @@ npm start
 
 All messages are JSON.
 
-## Frontend integration (minimal)
+## Frontend integration
 
-### 1) Connect
+### 1) Create WebSocket connection
 
 ```ts
 const ws = new WebSocket('ws://localhost:8081')
 ```
 
-### 2) Join matchmaking (on open)
+### 2) To start game
 
 ```ts
 ws.onopen = () => {
-  ws.send(JSON.stringify({ type: 'START_GAME' }))
+  ws.send(JSON.stringify({ type: 'START_GAME', payload: {} }))
+}
+```
+
+**Example JSON response after start game request**
+
+```json
+{
+  "type": "GAME_STATE",
+  "status": "WAITING_FOR_OPPONENT",
+  "gameId": null,
+  "playerSymbol": null,
+  "board": [null, null, null, null, null, null, null, null, null],
+  "currentTurn": "X",
+  "result": null,
+  "connectionLostTimestamp": null,
+  "gameMessage": "Waiting for opponent to join..."
 }
 ```
 
@@ -72,6 +88,31 @@ ws.onmessage = (event) => {
     // end of game
     // result, gameMessage
   }
+}
+```
+
+**Example JSON response after board update**
+
+```json
+{
+  "type": "UPDATE_BOARD",
+  "board": ["X", null, null, null, null, null, null, null, null],
+  "currentTurn": "O",
+  "error": null,
+  "result": null,
+  "gameMessage": "Waiting for opponent's move..."
+}
+```
+
+**Example JSON response after game complete **
+
+```json
+{
+  "type": "SET_RESULT",
+  "status": "COMPLETED",
+  "error": null,
+  "result": "X",
+  "gameMessage": "Player X wins!"
 }
 ```
 
@@ -104,48 +145,6 @@ ws.send(
     "index": 0,
     "symbol": "X"
   }
-}
-```
-
-### Server → Client
-
-**Initial / state updates**
-
-```json
-{
-  "type": "GAME_STATE",
-  "status": "CONNECTED" | "WAITING_FOR_OPPONENT" | "IN_PROGRESS" | "COMPLETED" | "CONNECTION_LOST",
-  "gameId": "game-..." | null,
-  "playerSymbol": "X" | "O" | null,
-  "board": [null, null, null, null, null, null, null, null, null],
-  "currentTurn": "X" | "O",
-  "result": "X" | "O" | "DRAW" | null,
-  "error": string | null,
-  "gameMessage": string | null
-}
-```
-
-**Board updates**
-
-```json
-{
-  "type": "UPDATE_BOARD",
-  "board": ["X", null, ...],
-  "currentTurn": "O",
-  "error": null,
-  "result": null
-}
-```
-
-**Game result**
-
-```json
-{
-  "type": "SET_RESULT",
-  "status": "COMPLETED",
-  "result": "X" | "O" | "DRAW",
-  "error": null,
-  "gameMessage": "Player X wins!"
 }
 ```
 
