@@ -93,66 +93,64 @@ const startGameMessage = JSON.stringify({ type: 'START_GAME', payload: {} }))
 sendMessage(startGameMessage)
 ```
 
-### 3) Handle server messages based on 3 types:
+### 3) Handle server messages as one full `GameState`
 
-**'GAME_STATE'**
+The server now sends a full game state payload on every update, so the client
+can set local state directly from each message.
 
-Update client game state with server response. Use the gameMessage field to
-display status updates to the user. gameMessage examples:
+`type` is still included (`'GAME_STATE' | 'UPDATE_BOARD' | 'SET_RESULT'`), but
+you do not need separate state update logic per type.
 
-- "Waiting for opponent to join..."
-- "Your turn!"
-- "Waiting for opponent's move..."
-- "Player X wins!"
-- "Player O wins!"
-- "Game ended in a draw."
+```ts
+type GameState = {
+  type: 'GAME_STATE' | 'UPDATE_BOARD' | 'SET_RESULT'
+  status:
+    | 'NOT_CONNECTED'
+    | 'CONNECTED'
+    | 'WAITING_FOR_OPPONENT'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'CONNECTION_LOST'
+  gameId: string | null
+  playerSymbol: 'X' | 'O' | null
+  board: [
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+    'X' | 'O' | null,
+  ]
+  currentTurn: 'X' | 'O'
+  result: 'X' | 'O' | 'DRAW' | null
+  error?: string | null
+  connectionLostTimestamp: number | null
+  gameMessage: string | null
+}
 
-**Example JSON response after start game request**
-
-```json
-{
-  "type": "GAME_STATE",
-  "status": "WAITING_FOR_OPPONENT",
-  "gameId": null,
-  "playerSymbol": null,
-  "board": [null, null, null, null, null, null, null, null, null],
-  "currentTurn": "X",
-  "result": null,
-  "connectionLostTimestamp": null,
-  "gameMessage": "Waiting for opponent to join..."
+const handleMessage = (event: MessageEvent) => {
+  const payload = JSON.parse(event.data) as GameState
+  setGameState(payload)
 }
 ```
 
-**'UPDATE_BOARD'**
-
-Update client board and current turn state after opponent move
-
-**Example JSON response after board update**
+**Example JSON response (same shape on every update):**
 
 ```json
 {
   "type": "UPDATE_BOARD",
+  "status": "IN_PROGRESS",
+  "gameId": "game-123",
+  "playerSymbol": "O",
   "board": ["X", null, null, null, null, null, null, null, null],
   "currentTurn": "O",
-  "error": null,
   "result": null,
-  "gameMessage": "Waiting for opponent's move..."
-}
-```
-
-**'SET_RESULT'**
-
-Update client game state with final result after game completion
-
-**Example JSON response after game complete**
-
-```json
-{
-  "type": "SET_RESULT",
-  "status": "COMPLETED",
   "error": null,
-  "result": "X",
-  "gameMessage": "Player X wins!"
+  "connectionLostTimestamp": null,
+  "gameMessage": "It's your turn!"
 }
 ```
 
@@ -164,7 +162,7 @@ const makeMoveMessage = JSON.stringify({
   payload: { gameId, index, symbol },
 })
 
-sendMessage(startGameMessage)
+sendMessage(makeMoveMessage)
 ```
 
 ## Notes
