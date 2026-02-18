@@ -26,7 +26,7 @@ type Status =
   | 'CONNECTION_LOST'
 
 export type GameState = {
-  type: 'GAME_STATE'
+  type: 'GAME_STATE' | 'UPDATE_BOARD' | 'SET_RESULT'
   status: Status
   gameId: string | null
   playerSymbol: 'X' | 'O' | null
@@ -40,11 +40,4 @@ export type GameState = {
   gameMessage: string | null
 }
 
-export type UpdateBoard = {
-  type: 'UPDATE_BOARD'
-  board: Board
-  currentTurn: 'X' | 'O'
-  error: string | null
-  result: 'X' | 'O' | 'DRAW' | null
-  gameMessage: string | null
-}
+

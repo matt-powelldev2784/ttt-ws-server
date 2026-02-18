@@ -55,6 +55,7 @@ const listGameBoards = (games: GamesMap) => {
     console.log(`Game:${game.gameId} = ${game.board} `)
     console.log('game.status', game.status)
     console.log('game.gameMessage', game.gameMessage)
+    console.log('game.result', game.result)
   })
   console.log('  ')
 }
