@@ -93,13 +93,9 @@ const startGameMessage = JSON.stringify({ type: 'START_GAME', payload: {} }))
 sendMessage(startGameMessage)
 ```
 
-### 3) Handle server messages as one full `GameState`
+### 3) Handle server messages
 
-The server now sends a full game state payload on every update, so the client
-can set local state directly from each message.
-
-`type` is still included (`'GAME_STATE' | 'UPDATE_BOARD' | 'SET_RESULT'`), but
-you do not need separate state update logic per type.
+The server sends a game state update on every relevant event : connection, opponent found, move made and game result. The message shape is consistent on every update, so the frontend can simply update local game state with the server response.
 
 ```ts
 type GameState = {
