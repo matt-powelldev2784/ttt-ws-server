@@ -88,7 +88,7 @@ export const updateClientState = ({ gameId }: UpdateClientStateInput) => {
     ...game,
     type: 'UPDATE_BOARD',
     board: gameBoard,
-    currentTurn: currentTurn === 'X' ? 'O' : 'X',
+    currentTurn: currentTurn,
     error: game.error || null,
     result: game.result || null,
     gameMessage: null,
@@ -98,7 +98,7 @@ export const updateClientState = ({ gameId }: UpdateClientStateInput) => {
     ...updateGameState,
     playerSymbol: 'X',
     gameMessage:
-      game.currentTurn === 'X'
+      updateGameState.currentTurn === 'X'
         ? "It's your turn!"
         : "Waiting for opponent's move...",
   }
@@ -107,7 +107,7 @@ export const updateClientState = ({ gameId }: UpdateClientStateInput) => {
     ...updateGameState,
     playerSymbol: 'O',
     gameMessage:
-      game.currentTurn === 'O'
+      updateGameState.currentTurn === 'O'
         ? "It's your turn!"
         : "Waiting for opponent's move...",
   }
@@ -180,6 +180,7 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
 
   // send message to client
   const payload = {
+    ...updatedGameState,
     type: 'SET_RESULT',
     status: 'COMPLETED',
     error: game.error || null,

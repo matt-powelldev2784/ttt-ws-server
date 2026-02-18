@@ -13,10 +13,10 @@ import {
   updateClientState,
 } from './gameState.js'
 import {
-  waitingPlayers,
   connections,
   addPlayerToStartGameQueue,
   removePlayer,
+  waitingPlayers,
 } from './playerState.js'
 
 // server setup
