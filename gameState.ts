@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws'
-import { GameState, UpdateBoard } from './types.js'
+import { GameState } from './types.js'
 
 export const games = new Map<string, GameState>()
 
@@ -84,25 +84,28 @@ export const updateClientState = ({ gameId }: UpdateClientStateInput) => {
   const currentTurn = game.currentTurn
   const playerXSocket = game.playerX.socket
   const playerOSocket = game.playerO.socket
-  const updateGameState: UpdateBoard = {
+  const updateGameState: GameState = {
+    ...game,
     type: 'UPDATE_BOARD',
     board: gameBoard,
-    currentTurn: currentTurn,
+    currentTurn: currentTurn === 'X' ? 'O' : 'X',
     error: game.error || null,
     result: game.result || null,
     gameMessage: null,
   }
 
-  const playerXPayload: UpdateBoard = {
+  const playerXPayload: GameState = {
     ...updateGameState,
+    playerSymbol: 'X',
     gameMessage:
       game.currentTurn === 'X'
         ? "It's your turn!"
         : "Waiting for opponent's move...",
   }
 
-  const playerOPayload: UpdateBoard = {
+  const playerOPayload: GameState = {
     ...updateGameState,
+    playerSymbol: 'O',
     gameMessage:
       game.currentTurn === 'O'
         ? "It's your turn!"
@@ -154,7 +157,6 @@ export const checkResult = ({ gameId, symbol }: CheckResultInput) => {
   return null
 }
 
-
 // set server and client state when game is completed
 type SetGameResultInput = {
   gameId: string
@@ -181,6 +183,7 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
     type: 'SET_RESULT',
     status: 'COMPLETED',
     error: game.error || null,
+    board: game.board,
     result: result,
     gameMessage:
       result === 'DRAW' ? 'Game ended in a draw!' : `Player ${result} wins!`,
@@ -194,7 +197,6 @@ export const setGameResult = ({ gameId, result }: SetGameResultInput) => {
     game.playerO.socket.send(JSON.stringify(payload))
   }
 }
-
 
 // set server game state to connection lost when player disconnects
 // update client status to connection lost if the game is not already completed
